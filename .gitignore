@@ -1,0 +1,26 @@
+# Gradle files
+.gradle/
+build/
+*.iml
+
+# Android Studio
+.idea/
+*.apk
+*.aab
+*.o
+*.so
+
+# Local configuration
+local.properties
+
+# Android Profiler
+*.trace
+
+# IDE
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Captures
+/captures
