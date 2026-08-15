@@ -1,4 +1,4 @@
-package com.hangman.domain.model
+package com.LetterQuest.domain.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,9 +33,9 @@ class UserTokensTest {
     }
 
     @Test
-    fun testStartingBalanceIsPositive() {
-        // Players need a small buffer to try a hint right away.
-        assertTrue(UserTokens.STARTING_BALANCE > 0)
+    fun testStartingBalanceIsZero() {
+        // Players start with 0 tokens and earn through gameplay.
+        assertEquals(0, UserTokens.STARTING_BALANCE)
     }
 
     @Test

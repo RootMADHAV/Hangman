@@ -3,6 +3,8 @@
 **Date:** August 6, 2026  
 **Status:** Complete
 
+**Package:** `com.LetterQuest`
+
 ## Overview
 
 Implemented comprehensive game economy, win-streak mechanics, and UI polish to make the game engaging and monetization-ready.

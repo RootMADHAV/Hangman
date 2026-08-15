@@ -1,9 +1,9 @@
-package com.hangman.ui.viewmodel
+package com.LetterQuest.ui.viewmodel
 
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.UserPreferences
-import com.hangman.domain.repository.PreferencesRepository
-import com.hangman.testutil.MainDispatcherRule
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.UserPreferences
+import com.LetterQuest.domain.repository.PreferencesRepository
+import com.LetterQuest.testutil.MainDispatcherRule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +93,10 @@ class SettingsViewModelTest {
             return Result.success(Unit)
         }
 
+        override suspend fun setAdsRemoved(enabled: Boolean): Result<Unit> {
+            return Result.success(Unit)
+        }
+
         override suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit> {
             lastNotificationsEnabled = enabled
             return Result.success(Unit)
@@ -108,9 +112,9 @@ class SettingsViewModelTest {
 
         override fun observeUnlockedThemes(): Flow<Set<String>> = MutableStateFlow(emptySet<String>()).asSharedFlow()
         override suspend fun unlockTheme(themeId: String) = Result.success(Unit)
-        override suspend fun getTutorialSettings() = Result.success(com.hangman.domain.model.TutorialSettings())
+        override suspend fun getTutorialSettings() = Result.success(com.LetterQuest.domain.model.TutorialSettings())
         override suspend fun setTutorialSetting(key: String, enabled: Boolean) = Result.success(Unit)
-        override fun observeTutorialSettings(): Flow<com.hangman.domain.model.TutorialSettings> = MutableStateFlow(com.hangman.domain.model.TutorialSettings())
+        override fun observeTutorialSettings(): Flow<com.LetterQuest.domain.model.TutorialSettings> = MutableStateFlow(com.LetterQuest.domain.model.TutorialSettings())
         override suspend fun setTutorialSeen(type: String) = Result.success(Unit)
         override fun observeLaunchCount(): Flow<Int> = MutableStateFlow(0)
         override suspend fun getLaunchCount() = Result.success(0)

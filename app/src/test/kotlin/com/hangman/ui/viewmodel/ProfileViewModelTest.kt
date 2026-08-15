@@ -1,13 +1,13 @@
-package com.hangman.ui.viewmodel
+package com.LetterQuest.ui.viewmodel
 
-import com.hangman.domain.model.Achievement
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.GameHistoryEntry
-import com.hangman.domain.model.PlayerStatistics
-import com.hangman.domain.repository.AchievementRepository
-import com.hangman.domain.repository.GameHistoryRepository
-import com.hangman.domain.repository.StatisticsRepository
-import com.hangman.testutil.MainDispatcherRule
+import com.LetterQuest.domain.model.Achievement
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.GameHistoryEntry
+import com.LetterQuest.domain.model.PlayerStatistics
+import com.LetterQuest.domain.repository.AchievementRepository
+import com.LetterQuest.domain.repository.GameHistoryRepository
+import com.LetterQuest.domain.repository.StatisticsRepository
+import com.LetterQuest.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

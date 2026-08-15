@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.hangman"
+    namespace = "com.LetterQuest"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.hangman"
+        applicationId = "com.LetterQuest"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.compose.foundation)
     implementation(libs.compose.animation)
 
@@ -106,6 +107,11 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.config)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
+
+    // Google Sign-In
+    implementation(libs.play.services.auth)
 
     // UMP / GDPR consent (required before showing ads in EEA)
     implementation(libs.user.messaging.platform)

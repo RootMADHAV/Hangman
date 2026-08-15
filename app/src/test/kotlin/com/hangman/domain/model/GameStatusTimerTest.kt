@@ -1,4 +1,4 @@
-package com.hangman.domain.model
+package com.LetterQuest.domain.model
 
 import org.junit.Assert.*
 import org.junit.Test

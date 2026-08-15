@@ -1,6 +1,6 @@
-package com.hangman.data.repository
+package com.LetterQuest.data.repository
 
-import com.hangman.domain.model.Difficulty
+import com.LetterQuest.domain.model.Difficulty
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before

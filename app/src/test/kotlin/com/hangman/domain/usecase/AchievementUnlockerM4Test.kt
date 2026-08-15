@@ -1,19 +1,19 @@
-package com.hangman.domain.usecase
+package com.LetterQuest.domain.usecase
 
-import com.hangman.domain.model.Achievement
-import com.hangman.domain.model.DailyChallenge
-import com.hangman.domain.model.DailyStreak
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.GameState
-import com.hangman.domain.model.GameStatus
-import com.hangman.domain.model.PlayerStatistics
-import com.hangman.domain.model.UserTokens
-import com.hangman.domain.model.Word
-import com.hangman.domain.repository.AchievementRepository
-import com.hangman.domain.repository.DailyChallengeRepository
-import com.hangman.domain.repository.GameHistoryRepository
-import com.hangman.domain.repository.StatisticsRepository
-import com.hangman.domain.repository.TokenRepository
+import com.LetterQuest.domain.model.Achievement
+import com.LetterQuest.domain.model.DailyChallenge
+import com.LetterQuest.domain.model.DailyStreak
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.GameState
+import com.LetterQuest.domain.model.GameStatus
+import com.LetterQuest.domain.model.PlayerStatistics
+import com.LetterQuest.domain.model.UserTokens
+import com.LetterQuest.domain.model.Word
+import com.LetterQuest.domain.repository.AchievementRepository
+import com.LetterQuest.domain.repository.DailyChallengeRepository
+import com.LetterQuest.domain.repository.GameHistoryRepository
+import com.LetterQuest.domain.repository.StatisticsRepository
+import com.LetterQuest.domain.repository.TokenRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -46,6 +46,7 @@ class AchievementUnlockerM4Test {
         override suspend fun getTokens() = Result.success(UserTokens(0))
         override suspend fun spendTokens(amount: Int) = Result.success(UserTokens(0))
         override suspend fun earnTokens(amount: Int) = Result.success(UserTokens(0))
+        override suspend fun reset() {}
     }
 
     private class MockDailyChallengeRepository : DailyChallengeRepository {
@@ -145,20 +146,20 @@ class AchievementUnlockerM4Test {
         var consecutiveWins = 0
         var maxWinStreak = 0
 
-        override suspend fun addGameEntry(entry: com.hangman.domain.model.GameHistoryEntry): Result<Unit> =
+        override suspend fun addGameEntry(entry: com.LetterQuest.domain.model.GameHistoryEntry): Result<Unit> =
             Result.success(Unit)
 
-        override suspend fun getRecentGames(limit: Int): Result<List<com.hangman.domain.model.GameHistoryEntry>> =
+        override suspend fun getRecentGames(limit: Int): Result<List<com.LetterQuest.domain.model.GameHistoryEntry>> =
             Result.success(emptyList())
 
-        override suspend fun getAllGames(): Result<List<com.hangman.domain.model.GameHistoryEntry>> =
+        override suspend fun getAllGames(): Result<List<com.LetterQuest.domain.model.GameHistoryEntry>> =
             Result.success(emptyList())
 
-        override fun observeAllGames(): Flow<List<com.hangman.domain.model.GameHistoryEntry>> = emptyFlow()
-        override suspend fun getWonGames(): Result<List<com.hangman.domain.model.GameHistoryEntry>> =
+        override fun observeAllGames(): Flow<List<com.LetterQuest.domain.model.GameHistoryEntry>> = emptyFlow()
+        override suspend fun getWonGames(): Result<List<com.LetterQuest.domain.model.GameHistoryEntry>> =
             Result.success(emptyList())
 
-        override suspend fun getLostGames(): Result<List<com.hangman.domain.model.GameHistoryEntry>> =
+        override suspend fun getLostGames(): Result<List<com.LetterQuest.domain.model.GameHistoryEntry>> =
             Result.success(emptyList())
 
         override suspend fun getConsecutiveWins(): Result<Int> = Result.success(consecutiveWins)

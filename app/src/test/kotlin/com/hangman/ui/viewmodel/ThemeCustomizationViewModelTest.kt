@@ -1,12 +1,12 @@
-package com.hangman.ui.viewmodel
+package com.LetterQuest.ui.viewmodel
 
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.UserPreferences
-import com.hangman.domain.model.UserTokens
-import com.hangman.domain.repository.PreferencesRepository
-import com.hangman.domain.repository.TokenRepository
-import com.hangman.ui.theme.ColorPresets
-import com.hangman.testutil.MainDispatcherRule
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.UserPreferences
+import com.LetterQuest.domain.model.UserTokens
+import com.LetterQuest.domain.repository.PreferencesRepository
+import com.LetterQuest.domain.repository.TokenRepository
+import com.LetterQuest.ui.theme.ColorPresets
+import com.LetterQuest.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -128,6 +128,7 @@ class ThemeCustomizationViewModelTest {
         override suspend fun setDefaultDifficulty(difficulty: Difficulty) = Result.success(Unit)
         override suspend fun setNotificationsEnabled(enabled: Boolean) = Result.success(Unit)
         override suspend fun setHintsEnabled(enabled: Boolean) = Result.success(Unit)
+        override suspend fun setAdsRemoved(enabled: Boolean) = Result.success(Unit)
         override suspend fun setThemePreset(presetId: String): Result<Unit> {
             savedThemePresetId = presetId
             preferencesFlow.value = preferencesFlow.value.copy(themePresetId = presetId)
@@ -138,9 +139,9 @@ class ThemeCustomizationViewModelTest {
             unlockedFlow.value = unlockedThemeIds.toSet()
             return Result.success(Unit)
         }
-        override suspend fun getTutorialSettings() = Result.success(com.hangman.domain.model.TutorialSettings())
+        override suspend fun getTutorialSettings() = Result.success(com.LetterQuest.domain.model.TutorialSettings())
         override suspend fun setTutorialSetting(key: String, enabled: Boolean) = Result.success(Unit)
-        override fun observeTutorialSettings(): Flow<com.hangman.domain.model.TutorialSettings> = MutableStateFlow(com.hangman.domain.model.TutorialSettings())
+        override fun observeTutorialSettings(): Flow<com.LetterQuest.domain.model.TutorialSettings> = MutableStateFlow(com.LetterQuest.domain.model.TutorialSettings())
         override suspend fun setTutorialSeen(type: String) = Result.success(Unit)
         override fun observeLaunchCount(): Flow<Int> = MutableStateFlow(0)
         override suspend fun getLaunchCount() = Result.success(0)
@@ -168,6 +169,9 @@ class ThemeCustomizationViewModelTest {
             val updated = UserTokens(tokensFlow.value.balance + amount)
             tokensFlow.value = updated
             return Result.success(updated)
+        }
+        override suspend fun reset() {
+            tokensFlow.value = UserTokens(0)
         }
     }
 }

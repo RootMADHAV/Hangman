@@ -1,7 +1,7 @@
-package com.hangman.domain.model
+package com.LetterQuest.domain.model
 
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.UserPreferences
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.UserPreferences
 import org.junit.Assert.*
 import org.junit.Test
 

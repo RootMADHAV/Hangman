@@ -1,8 +1,8 @@
-package com.hangman.ui.viewmodel
+package com.LetterQuest.ui.viewmodel
 
-import com.hangman.domain.model.Achievement
-import com.hangman.domain.repository.AchievementRepository
-import com.hangman.testutil.MainDispatcherRule
+import com.LetterQuest.domain.model.Achievement
+import com.LetterQuest.domain.repository.AchievementRepository
+import com.LetterQuest.testutil.MainDispatcherRule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

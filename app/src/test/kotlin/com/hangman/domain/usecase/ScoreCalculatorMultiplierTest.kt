@@ -1,10 +1,10 @@
-package com.hangman.domain.usecase
+package com.LetterQuest.domain.usecase
 
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.GameState
-import com.hangman.domain.model.GameStatus
-import com.hangman.domain.model.ShopItem
-import com.hangman.domain.model.Word
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.GameState
+import com.LetterQuest.domain.model.GameStatus
+import com.LetterQuest.domain.model.ShopItem
+import com.LetterQuest.domain.model.Word
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

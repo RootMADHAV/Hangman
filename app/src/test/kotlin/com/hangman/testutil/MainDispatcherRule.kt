@@ -1,4 +1,4 @@
-package com.hangman.testutil
+package com.LetterQuest.testutil
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

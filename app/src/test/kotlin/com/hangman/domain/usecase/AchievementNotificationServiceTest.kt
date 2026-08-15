@@ -1,7 +1,7 @@
-package com.hangman.domain.usecase
+package com.LetterQuest.domain.usecase
 
-import com.hangman.domain.model.Achievement
-import com.hangman.domain.repository.AchievementRepository
+import com.LetterQuest.domain.model.Achievement
+import com.LetterQuest.domain.repository.AchievementRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest

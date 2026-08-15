@@ -1,6 +1,6 @@
-package com.hangman.data.audio
+package com.LetterQuest.data.audio
 
-import com.hangman.data.audio.ToneSynthesizer.Note
+import com.LetterQuest.data.audio.ToneSynthesizer.Note
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue

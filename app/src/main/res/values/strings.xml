@@ -6,4 +6,38 @@
     <string name="achievements">Achievements</string>
     <string name="settings">Settings</string>
     <string name="about">About</string>
+    <string name="default_web_client_id">856760580529-gg76httbg2feugql4lrjcv5orv8l5qkv.apps.googleusercontent.com</string>
+
+    <!-- Authentication -->
+    <string name="auth_title">Welcome</string>
+    <string name="auth_subtitle">Sign in to save your progress</string>
+    <string name="continue_as_guest">🎭 Continue as Guest</string>
+    <string name="sign_in_with_google">🔑 Continue with Google</string>
+    <string name="sign_in_with_email">Sign In with Email</string>
+    <string name="sign_up_with_email">Create Account</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="password_reset_sent">Password reset email sent. Check your inbox.</string>
+    <string name="link_guest_account">Link Guest Account</string>
+    <string name="link_guest_progress">Link guest progress to email</string>
+    <string name="link_account">Link Account</string>
+    <string name="cancel">Cancel</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="verify_email">Verify Email</string>
+    <string name="back_to_sign_in">Back to Sign In</string>
+    <string name="already_have_account">Already have an account? Sign In</string>
+    <string name="need_account">Need an account? Sign Up</string>
+
+    <!-- Errors -->
+    <string name="error_auth_generic">Authentication failed. Please try again.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_email_invalid">Please enter a valid email address.</string>
+    <string name="error_password_weak">Password is too weak. Please use at least 6 characters.</string>
+    <string name="error_email_in_use">An account already exists with this email address.</string>
+    <string name="error_user_not_found">No account found with this email address.</string>
+    <string name="error_wrong_password">Incorrect password. Please try again.</string>
+    <string name="error_user_disabled">This account has been disabled.</string>
+    <string name="error_too_many_requests">Too many attempts. Please try again later.</string>
 </resources>

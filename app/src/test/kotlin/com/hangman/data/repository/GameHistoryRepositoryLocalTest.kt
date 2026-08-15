@@ -1,10 +1,10 @@
-package com.hangman.data.repository
+package com.LetterQuest.data.repository
 
-import com.hangman.data.local.dao.GameHistoryDao
-import com.hangman.data.local.entity.GameHistoryEntity
-import com.hangman.data.local.repository.GameHistoryRepositoryLocal
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.GameHistoryEntry
+import com.LetterQuest.data.local.dao.GameHistoryDao
+import com.LetterQuest.data.local.entity.GameHistoryEntity
+import com.LetterQuest.data.local.repository.GameHistoryRepositoryLocal
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.GameHistoryEntry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
@@ -130,12 +130,13 @@ class GameHistoryRepositoryLocalTest {
         assertEquals(2, result.getOrNull())
     }
 
-    private class MockTokenRepository : com.hangman.domain.repository.TokenRepository {
-        override fun observeTokens(): Flow<com.hangman.domain.model.UserTokens> =
+    private class MockTokenRepository : com.LetterQuest.domain.repository.TokenRepository {
+        override fun observeTokens(): Flow<com.LetterQuest.domain.model.UserTokens> =
             emptyFlow()
-        override suspend fun getTokens() = Result.success(com.hangman.domain.model.UserTokens(0))
-        override suspend fun spendTokens(amount: Int) = Result.success(com.hangman.domain.model.UserTokens(0))
-        override suspend fun earnTokens(amount: Int) = Result.success(com.hangman.domain.model.UserTokens(0))
+        override suspend fun getTokens() = Result.success(com.LetterQuest.domain.model.UserTokens(0))
+        override suspend fun spendTokens(amount: Int) = Result.success(com.LetterQuest.domain.model.UserTokens(0))
+        override suspend fun earnTokens(amount: Int) = Result.success(com.LetterQuest.domain.model.UserTokens(0))
+        override suspend fun reset() {}
     }
 
     private class MockGameHistoryDao : GameHistoryDao {

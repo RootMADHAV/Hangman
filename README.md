@@ -1,6 +1,8 @@
-# 🎮 Hangman — Mobile Word Guessing Game
+# 🎮 Letter Quest — Mobile Word Guessing Game
 
 A modern, feature-rich Android implementation of the classic Hangman word-guessing game, built with **Kotlin**, **Jetpack Compose**, and **Material Design 3**.
+
+**Package:** `com.LetterQuest`
 
 ## 🎯 Core Gameplay
 
@@ -54,6 +56,15 @@ Guess a hidden word by selecting letters before running out of attempts.
 👤 **Custom nicknames** — personalize your player profile  
 🎨 **10 unique avatars** — choose from Player, Champion, Genius, Speed Demon, Lucky, Dragon, Phoenix, Knight, Wizard, Star  
 📋 **Player profiles** — persistent account with earned tokens and playtime  
+🏅 **Level titles & progress** — rank badges from Beginner to Legend with XP progression  
+
+### User Authentication
+🔐 **Firebase Authentication** — Guest, Google, and Email sign-in  
+👤 **Guest mode** — Firebase Anonymous Authentication for instant play  
+🔵 **Google Sign-In** — OAuth integration with Firebase credentials  
+📧 **Email sign-up/sign-in** — account creation, verification, password reset  
+🔗 **Guest-to-email linking** — permanently save guest progress by linking to email  
+☁️ **Cloud backup/restore** — Firestore-backed profile sync across devices  
 
 ### Sound System
 🎵 **8 independent sound controls** — toggle individual sound types  
@@ -83,12 +94,13 @@ ui/        → Screens, ViewModels, Components
 di/        → Hilt dependency injection
 ```
 
-**Stack:** Kotlin 1.9+ · Jetpack Compose · Material 3 · Room + DataStore · Coroutines/Flow · Hilt
+**Stack:** Kotlin 2.0+ · Jetpack Compose · Material 3 · Room + DataStore · Coroutines/Flow · Hilt · Firebase Auth/Firestore
 
 ## 📱 Screens
 
 | | |
 |--|--|
+| Auth | First-launch authentication: Guest, Google, Email sign-in/sign-up |
 | Home | Token balance, daily reward badge, play buttons, nav grid |
 | Gameplay | Hangman drawing, word display, hints, alphabet grid |
 | Win Celebration | Overlay: streak count, tokens earned, next-word button |
@@ -100,13 +112,13 @@ di/        → Hilt dependency injection
 
 ## 🎯 Word Catalog
 
-**~300+ words** across **17 categories:**
+**~400+ words** across **17 categories:**
 
 🐾 Animals (32) · 🎬 Movies (22) · 📺 TV (11) · 📚 Books (12) · 🌍 Countries (16) · 🏙️ Cities (15) · ⚽ Sports (15) · 🍕 Foods (21) · 🎵 Music (14) · 🗼 Landmarks (10) · 🌿 Nature (15) · 🔬 Science (13) · 💻 Tech (13) · 👷 Professions (14) · 🚀 Space (19) · ⚡ Mythology (15) · 🗺️ Geography (11)
 
 ## 🛠️ Build & Run
 
-**Requirements:** Android SDK 35 · Min SDK 29 · Kotlin 1.9+ · JDK 17
+**Requirements:** Android SDK 35 · Min SDK 29 · Kotlin 2.0+ · JDK 17
 
 ```bash
 ./gradlew build                 # Build
@@ -159,7 +171,22 @@ Home → Setup (difficulty/category) → Play → Win (overlay continues) or Los
 ✅ Background music framework (soothing playback when enabled)  
 ✅ Player customization (10 avatars, custom nicknames, player profiles)  
 ✅ Dark theme optimizations (Profile & Leaderboard sections)  
-✅ APK build successful (34 MB release build)  
+✅ APK build successful (89 MB debug build)  
+
+## 📋 Milestone 7 Updates (August 2026)
+
+✅ Firebase Authentication integration (Guest, Google, Email)  
+✅ First-launch auth screen with 3 sign-in options  
+✅ Firebase Anonymous Authentication for guest mode  
+✅ Google Sign-In with OAuth credentials  
+✅ Email sign-up with verification email  
+✅ Email sign-in with user-friendly error messages  
+✅ Password reset flow via Firebase  
+✅ Guest-to-email account linking  
+✅ Cloud backup/restore via Firestore  
+✅ Auth state persistence and auto-navigation  
+✅ Level titles expanded (Beginner → Legend) with XP progress  
+✅ Word catalog expanded (~400+ words across 17 categories)    
 
 ## 🚀 Future
 

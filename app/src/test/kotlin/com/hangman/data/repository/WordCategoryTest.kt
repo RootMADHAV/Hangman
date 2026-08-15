@@ -1,7 +1,7 @@
-package com.hangman.data.repository
+package com.LetterQuest.data.repository
 
-import com.hangman.domain.model.Difficulty
-import com.hangman.domain.model.WordCategory
+import com.LetterQuest.domain.model.Difficulty
+import com.LetterQuest.domain.model.WordCategory
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

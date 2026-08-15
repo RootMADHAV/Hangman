@@ -1,4 +1,4 @@
-package com.hangman.domain.model
+package com.LetterQuest.domain.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -67,9 +67,10 @@ class ShopItemTest {
 
     @Test
     fun testEveryPerkIsReachableByPlaying() {
-        // With the win-based economy: a 5-letter word + a small combo payout per game
-        // is enough that even the priciest perk is reachable within a reasonable winstreak.
-        val tokensPerWord = UserTokens.earnedPerWord(5) + UserTokens.COMBO_STEP_TOKENS * 2
+        // With the win-based economy: a 5-letter word win + win bonus + a small combo
+        // payout per game is enough that even the priciest perk is reachable within a
+        // reasonable winstreak.
+        val tokensPerWord = UserTokens.EARNED_PER_WIN + UserTokens.earnedPerWord(5) + UserTokens.COMBO_STEP_TOKENS * 2
         val priciest = ShopItem.entries.maxOf { it.cost }
         val wordsNeeded = (priciest + tokensPerWord - 1) / tokensPerWord
         assertTrue("Priciest perk reachable within ~100 wins", wordsNeeded < 100)

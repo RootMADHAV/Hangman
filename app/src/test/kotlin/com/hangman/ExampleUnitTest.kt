@@ -1,4 +1,4 @@
-package com.hangman
+package com.LetterQuest
 
 import org.junit.Test
 

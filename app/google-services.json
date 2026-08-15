@@ -1,27 +1,44 @@
 {
-  "_comment": "PLACEHOLDER — replace this entire file with your real google-services.json from the Firebase console (https://console.firebase.google.com). Firebase network calls will fail until you do, but the app will compile and run.",
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "hangman-placeholder",
-    "storage_bucket": "hangman-placeholder.appspot.com"
+    "project_number": "856760580529",
+    "project_id": "letter-quest-hangman-game",
+    "storage_bucket": "letter-quest-hangman-game.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:856760580529:android:9236cf46346bde73342590",
         "android_client_info": {
-          "package_name": "com.hangman"
+          "package_name": "com.LetterQuest"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "856760580529-slu5och38am5m62eoa67h59lq1rfgrq8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.LetterQuest",
+            "certificate_hash": "a702d37b241a45eea344b392fb31aa67aef622c2"
+          }
+        },
+        {
+          "client_id": "856760580529-gg76httbg2feugql4lrjcv5orv8l5qkv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "REPLACE_WITH_YOUR_API_KEY"
+          "current_key": "AIzaSyBHxwwXhQFky03tVGzIUtHtcTK_X0-pz2Y"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856760580529-gg76httbg2feugql4lrjcv5orv8l5qkv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
