@@ -65,6 +65,8 @@ class HangmanApplication : Application() {
             if (state.canClaim) {
                 DailyRewardNotification.show(context)
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.w("HangmanApplication", "Failed to schedule daily reward notification", e)
+        }
     }
 }

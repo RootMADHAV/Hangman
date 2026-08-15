@@ -7,6 +7,7 @@ import com.LetterQuest.domain.model.AuthState
 import com.LetterQuest.domain.repository.AuthRepository
 import com.LetterQuest.domain.usecase.BackupUserDataUseCase
 import com.LetterQuest.domain.usecase.LinkGuestToEmailUseCase
+import com.LetterQuest.domain.usecase.LinkGuestToGoogleUseCase
 import com.LetterQuest.domain.usecase.ReloadUserUseCase
 import com.LetterQuest.domain.usecase.RestoreUserDataUseCase
 import com.LetterQuest.domain.usecase.SendEmailVerificationUseCase
@@ -16,6 +17,9 @@ import com.LetterQuest.domain.usecase.SignInWithEmailUseCase
 import com.LetterQuest.domain.usecase.SignInWithGoogleUseCase
 import com.LetterQuest.domain.usecase.SignOutUseCase
 import com.LetterQuest.domain.usecase.SignUpWithEmailUseCase
+import com.LetterQuest.domain.usecase.UpdateAvatarUseCase
+import com.LetterQuest.domain.usecase.UpdateNicknameUseCase
+import com.LetterQuest.domain.usecase.UpdateUsernameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +32,7 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isEmailLinkMode: Boolean = false,
+    val isGoogleLinkMode: Boolean = false,
     val isSignUpMode: Boolean = false,
     val isForgotPasswordMode: Boolean = false,
     val passwordResetSent: Boolean = false
@@ -46,12 +51,16 @@ class AuthViewModel @Inject constructor(
     private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
     private val signInAsGuestUseCase: SignInAsGuestUseCase,
     private val linkGuestToEmailUseCase: LinkGuestToEmailUseCase,
+    private val linkGuestToGoogleUseCase: LinkGuestToGoogleUseCase,
     private val signOutUseCase: SignOutUseCase,
     private val sendEmailVerificationUseCase: SendEmailVerificationUseCase,
     private val reloadUserUseCase: ReloadUserUseCase,
     private val backupUserDataUseCase: BackupUserDataUseCase,
     private val restoreUserDataUseCase: RestoreUserDataUseCase,
     private val sendPasswordResetUseCase: SendPasswordResetUseCase,
+    private val updateNicknameUseCase: UpdateNicknameUseCase,
+    private val updateUsernameUseCase: UpdateUsernameUseCase,
+    private val updateAvatarUseCase: UpdateAvatarUseCase,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -162,6 +171,27 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun linkGuestToGoogle(idToken: String) {
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        viewModelScope.launch {
+            when (val result = linkGuestToGoogleUseCase(idToken)) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isGoogleLinkMode = false
+                    )
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+                else -> {}
+            }
+        }
+    }
+
     fun signOut() {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
@@ -204,8 +234,51 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun updateNickname(nickname: String) {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+        viewModelScope.launch {
+            when (val result = updateNicknameUseCase(nickname)) {
+                is AuthResult.Success -> { }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun updateUsername(username: String) {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+        viewModelScope.launch {
+            when (val result = updateUsernameUseCase(username)) {
+                is AuthResult.Success -> { }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun updateAvatar(avatarId: String) {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+        viewModelScope.launch {
+            when (val result = updateAvatarUseCase(avatarId)) {
+                is AuthResult.Success -> { }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
     fun setEmailLinkMode(enabled: Boolean) {
         _uiState.value = _uiState.value.copy(isEmailLinkMode = enabled, errorMessage = null)
+    }
+
+    fun setGoogleLinkMode(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(isGoogleLinkMode = enabled, errorMessage = null)
     }
 
     fun setSignUpMode(enabled: Boolean) {

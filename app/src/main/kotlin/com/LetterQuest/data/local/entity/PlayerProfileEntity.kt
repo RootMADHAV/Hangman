@@ -3,11 +3,12 @@ package com.LetterQuest.data.local.entity
 data class PlayerProfileEntity(
     val id: String,
     val nickname: String,
+    val username: String,
     val avatarId: String,
     val totalGamesPlayed: Int,
     val totalTokensEarned: Int,
     val createdAt: Long,
-    val lastPlayedAt: Long,
+    val updatedAt: Long,
     val authProvider: String,
     val firebaseUid: String?,
     val email: String?

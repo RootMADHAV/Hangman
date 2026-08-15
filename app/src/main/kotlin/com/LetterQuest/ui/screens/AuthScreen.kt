@@ -75,7 +75,11 @@ fun AuthScreen(
         try {
             val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
             account.idToken?.let { idToken ->
-                authViewModel.signInWithGoogle(idToken)
+                if (uiState.isGoogleLinkMode) {
+                    authViewModel.linkGuestToGoogle(idToken)
+                } else {
+                    authViewModel.signInWithGoogle(idToken)
+                }
             }
         } catch (e: ApiException) {
             authViewModel.clearError()
@@ -284,6 +288,15 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.padding(start = 4.dp))
                         Text("Link guest progress to email")
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    TextButton(
+                        onClick = { authViewModel.setGoogleLinkMode(true) },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Link, contentDescription = null)
+                        Spacer(modifier = Modifier.padding(start = 4.dp))
+                        Text("Link guest progress to Google")
+                    }
                 }
             }
 
@@ -325,6 +338,46 @@ fun AuthScreen(
                             Text("Link Account")
                         }
                         TextButton(onClick = { authViewModel.setEmailLinkMode(false) }) {
+                            Text("Cancel")
+                        }
+                    }
+                }
+            }
+
+            if (uiState.isGoogleLinkMode && !uiState.isForgotPasswordMode) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Link Guest to Google",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Link your guest progress to a Google account. Your data will be preserved.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestIdToken(context.getString(com.LetterQuest.R.string.default_web_client_id))
+                                    .requestEmail()
+                                    .build()
+                                val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !uiState.isLoading
+                        ) {
+                            Text("Link Google Account")
+                        }
+                        TextButton(onClick = { authViewModel.setGoogleLinkMode(false) }) {
                             Text("Cancel")
                         }
                     }

@@ -8,7 +8,8 @@ sealed class AuthState {
         val displayName: String?,
         val email: String?,
         val isGuest: Boolean,
-        val isEmailVerified: Boolean = false
+        val isEmailVerified: Boolean = false,
+        val username: String = ""
     ) : AuthState()
     data class Error(val message: String) : AuthState()
 }

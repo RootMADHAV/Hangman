@@ -1,10 +1,13 @@
 package com.LetterQuest.ui.viewmodel
 
+import com.LetterQuest.domain.model.AuthResult
 import com.LetterQuest.domain.model.Achievement
 import com.LetterQuest.domain.model.Difficulty
 import com.LetterQuest.domain.model.GameHistoryEntry
+import com.LetterQuest.domain.model.PlayerProfile
 import com.LetterQuest.domain.model.PlayerStatistics
 import com.LetterQuest.domain.repository.AchievementRepository
+import com.LetterQuest.domain.repository.AuthRepository
 import com.LetterQuest.domain.repository.GameHistoryRepository
 import com.LetterQuest.domain.repository.StatisticsRepository
 import com.LetterQuest.testutil.MainDispatcherRule
@@ -30,16 +33,19 @@ class ProfileViewModelTest {
     private lateinit var mockStatisticsRepository: MockStatisticsRepository
     private lateinit var mockAchievementRepository: MockAchievementRepository
     private lateinit var mockGameHistoryRepository: MockGameHistoryRepository
+    private lateinit var mockAuthRepository: MockAuthRepository
 
     @Before
     fun setup() {
         mockStatisticsRepository = MockStatisticsRepository()
         mockAchievementRepository = MockAchievementRepository()
         mockGameHistoryRepository = MockGameHistoryRepository()
+        mockAuthRepository = MockAuthRepository()
         viewModel = ProfileViewModel(
             mockStatisticsRepository,
             mockAchievementRepository,
-            mockGameHistoryRepository
+            mockGameHistoryRepository,
+            mockAuthRepository
         )
     }
 
@@ -131,5 +137,29 @@ class ProfileViewModelTest {
         override suspend fun getMaxWinStreak() = Result.success(0)
         override suspend fun getGameCount() = Result.success(0)
         override suspend fun deleteAll() = Result.success(Unit)
+    }
+
+    private class MockAuthRepository : AuthRepository {
+        private val _profile = MutableStateFlow<PlayerProfile?>(null)
+        val profileFlow: Flow<PlayerProfile?> = _profile.asStateFlow()
+
+        override val currentUser: Flow<com.LetterQuest.domain.model.AuthState> = MutableStateFlow(com.LetterQuest.domain.model.AuthState.Unauthenticated).asStateFlow()
+        override val profile: Flow<PlayerProfile?> = profileFlow
+        override suspend fun signInWithGoogle(idToken: String) = AuthResult.Success
+        override suspend fun linkGuestToGoogle(idToken: String) = AuthResult.Success
+        override suspend fun signInWithEmail(email: String, password: String) = AuthResult.Success
+        override suspend fun signUpWithEmail(email: String, password: String) = AuthResult.Success
+        override suspend fun signInAsGuest() = AuthResult.Success
+        override suspend fun linkGuestToEmail(email: String, password: String) = AuthResult.Success
+        override suspend fun signOut() = AuthResult.Success
+        override suspend fun resetLocalData() = AuthResult.Success
+        override suspend fun sendEmailVerification() = AuthResult.Success
+        override suspend fun reloadUser() = AuthResult.Success
+        override suspend fun sendPasswordResetEmail(email: String) = AuthResult.Success
+        override suspend fun backupUserData() = AuthResult.Success
+        override suspend fun restoreUserData() = AuthResult.Success
+        override suspend fun updateNickname(nickname: String) = AuthResult.Success
+        override suspend fun updateUsername(username: String) = AuthResult.Success
+        override suspend fun updateAvatar(avatarId: String) = AuthResult.Success
     }
 }

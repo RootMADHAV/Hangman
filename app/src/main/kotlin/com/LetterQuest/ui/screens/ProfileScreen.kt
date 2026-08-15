@@ -12,14 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,6 +42,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,7 +55,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.LetterQuest.domain.model.AvatarCatalog
+import com.LetterQuest.domain.model.AvatarOption
 import com.LetterQuest.domain.model.PlayerLevel
+import com.LetterQuest.domain.model.UsernameValidator
 import com.LetterQuest.ui.navigation.NavigationRoute
 import com.LetterQuest.ui.viewmodel.AuthViewModel
 import com.LetterQuest.ui.viewmodel.ProfileViewModel
@@ -65,6 +73,97 @@ fun ProfileScreen(
     val authState by authViewModel.uiState.collectAsState()
     var showLinkDialog by remember { mutableStateOf(false) }
     var showSignOutDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editNickname by remember { mutableStateOf("") }
+    var editUsername by remember { mutableStateOf("") }
+    var editAvatarId by remember { mutableIntStateOf(0) }
+    var usernameError by remember { mutableStateOf<String?>(null) }
+
+    val currentUser = authState.currentUser
+    val avatarOption = AvatarCatalog.getAvatarById(profileState.avatarId) ?: AvatarCatalog.getDefaultAvatar()
+    val accountType = when {
+        currentUser == null -> "Unknown"
+        currentUser.isGuest -> "Guest"
+        else -> "Email"
+    }
+
+    if (showEditDialog) {
+        editNickname = profileState.nickname
+        editUsername = profileState.username
+        editAvatarId = AvatarCatalog.avatars.indexOfFirst { it.id == profileState.avatarId }.coerceAtLeast(0)
+        usernameError = null
+
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Profile") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    OutlinedTextField(
+                        value = editNickname,
+                        onValueChange = { editNickname = it },
+                        label = { Text("Display Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editUsername,
+                        onValueChange = {
+                            editUsername = it
+                            usernameError = null
+                        },
+                        label = { Text("Username") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = usernameError != null,
+                        supportingText = {
+                            if (usernameError != null) {
+                                Text(text = usernameError!!, color = MaterialTheme.colorScheme.error)
+                            } else if (editUsername.isNotBlank()) {
+                                Text(
+                                    text = "3-20 chars, letters, numbers, _, -",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Choose Avatar", fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AvatarGrid(
+                        selectedIndex = editAvatarId,
+                        onSelect = { editAvatarId = it }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val usernameValidation = UsernameValidator.validate(editUsername)
+                        if (usernameValidation is com.LetterQuest.domain.model.ValidationResult.Error) {
+                            usernameError = usernameValidation.message
+                            return@TextButton
+                        }
+                        val validatedUsername = (usernameValidation as com.LetterQuest.domain.model.ValidationResult.Success).value
+                        if (editNickname.isNotBlank()) {
+                            authViewModel.updateNickname(editNickname.trim())
+                        }
+                        authViewModel.updateUsername(validatedUsername)
+                        authViewModel.updateAvatar(AvatarCatalog.avatars[editAvatarId].id)
+                        showEditDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -87,7 +186,6 @@ fun ProfileScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val currentUser = authState.currentUser
             if (currentUser != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -97,16 +195,50 @@ fun ProfileScreen(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("👤", fontSize = 40.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surface,
+                                    RoundedCornerShape(40.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = avatarOption.emoji,
+                                fontSize = 40.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = currentUser.displayName ?: "Player",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            text = profileState.nickname.ifBlank { currentUser.displayName ?: "Player" },
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+                        if (profileState.username.isNotBlank()) {
+                            Text(
+                                text = "@${profileState.username}",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = accountType,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
 
                         val playerLevel = PlayerLevel.from(profileState.statistics.gamesWon, profileState.statistics.totalScore)
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
@@ -149,7 +281,8 @@ fun ProfileScreen(
                             Text(
                                 text = currentUser.email,
                                 fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 8.dp)
                             )
                         }
                         if (currentUser.isGuest) {
@@ -157,7 +290,7 @@ fun ProfileScreen(
                                 text = "Guest Account",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(top = 4.dp)
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
                         if (currentUser.isEmailVerified) {
@@ -169,6 +302,15 @@ fun ProfileScreen(
                             )
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = { showEditDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Edit Profile")
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -200,7 +342,7 @@ fun ProfileScreen(
                         onClick = { showSignOutDialog = true },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Logout, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                         Spacer(modifier = Modifier.padding(start = 4.dp))
                         Text("Sign Out")
                     }
@@ -319,6 +461,38 @@ fun ProfileScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun AvatarGrid(
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit
+) {
+    val rows = AvatarCatalog.avatars.chunked(5)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        rows.forEach { rowAvatars ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                rowAvatars.forEach { avatar ->
+                    val index = AvatarCatalog.avatars.indexOf(avatar)
+                    val isSelected = index == selectedIndex
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(28.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = avatar.emoji, fontSize = 28.sp)
+                    }
+                }
+            }
+        }
     }
 }
 

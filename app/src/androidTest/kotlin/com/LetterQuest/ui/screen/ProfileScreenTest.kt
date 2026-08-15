@@ -41,4 +41,14 @@ class ProfileScreenTest {
 
         composeTestRule.onNodeWithText("Achievements").assertExists()
     }
+
+    @Test
+    fun testProfileScreenRendersEditProfileButton() {
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            ProfileScreen(navController)
+        }
+
+        composeTestRule.onNodeWithText("Edit Profile").assertExists()
+    }
 }

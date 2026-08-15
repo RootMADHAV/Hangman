@@ -47,7 +47,6 @@ data class GameUIState(
     val lastGuessedLetter: Char? = null,
     val categoryId: String = WordCategory.ALL_CATEGORIES_ID,
     val tokensEarnedThisGame: Int = 0,
-    val currentCombo: Int = 0,
     val hintMessage: String? = null,
     val hintMessagePersistent: String? = null,
     val usedHintThisGame: Boolean = false,
@@ -207,7 +206,6 @@ class GameViewModel @Inject constructor(
                     error = null,
                     categoryId = categoryId,
                     tokensEarnedThisGame = 0,
-                    currentCombo = 0,
                     hintMessage = null,
                     usedHintThisGame = false,
                     isDailyChallenge = isDailyChallenge,
@@ -455,7 +453,6 @@ class GameViewModel @Inject constructor(
                         guessResult = null,
                         lastGuessedLetter = null,
                         usedHintThisGame = false,
-                        currentCombo = 0,
                         hintMessage = null,
                         hintMessagePersistent = null
                     )
@@ -482,15 +479,27 @@ class GameViewModel @Inject constructor(
 
         val (newGameStatus, result) = GuessingEngine.processGuess(currentState, letter)
 
+        val newCombo = when (result) {
+            is GuessResult.Correct -> currentState.currentCombo + 1
+            is GuessResult.Incorrect -> 0
+            else -> currentState.currentCombo
+        }
+        val newMaxCombo = maxOf(currentState.maxCombo, newCombo)
+
         // Timed Blitz: the score updates live — +N per correct letter, +bonus when the
         // word completes. Other modes keep score 0 until the win is finalized.
         val scoredStatus = if (newGameStatus.mode.isTimed && result == GuessResult.Correct) {
             newGameStatus.copy(
                 score = newGameStatus.score + GameMode.TIMED_POINTS_PER_CORRECT_LETTER +
-                    if (newGameStatus.state == GameState.WON) GameMode.TIMED_POINTS_PER_WORD_SOLVED else 0
+                    if (newGameStatus.state == GameState.WON) GameMode.TIMED_POINTS_PER_WORD_SOLVED else 0,
+                currentCombo = newCombo,
+                maxCombo = newMaxCombo
             )
         } else {
-            newGameStatus
+            newGameStatus.copy(
+                currentCombo = newCombo,
+                maxCombo = newMaxCombo
+            )
         }
 
         updateState {
@@ -498,12 +507,7 @@ class GameViewModel @Inject constructor(
                 gameStatus = scoredStatus,
                 guessResult = result,
                 lastGuessedLetter = letter,
-                hintMessage = hintMessagePersistent,
-                currentCombo = when (result) {
-                    is GuessResult.Correct -> currentCombo + 1
-                    is GuessResult.Incorrect -> 0
-                    else -> currentCombo
-                }
+                hintMessage = hintMessagePersistent
             )
         }
 
@@ -821,7 +825,7 @@ class GameViewModel @Inject constructor(
                     gameStatus.mode.isTimed -> 0
                     won -> {
                         val lettersInWord = gameStatus.word.normalizedValue.count(Char::isLetter)
-                        val comboBonus = _uiState.value.currentCombo
+                        val comboBonus = gameStatus.maxCombo
                         UserTokens.EARNED_PER_WIN + lettersInWord + comboBonus
                     }
                     else -> UserTokens.EARNED_PER_LOSS

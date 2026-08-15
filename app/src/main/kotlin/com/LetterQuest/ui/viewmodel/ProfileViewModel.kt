@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.LetterQuest.domain.model.Achievement
 import com.LetterQuest.domain.model.PlayerStatistics
 import com.LetterQuest.domain.repository.AchievementRepository
+import com.LetterQuest.domain.repository.AuthRepository
 import com.LetterQuest.domain.repository.GameHistoryRepository
 import com.LetterQuest.domain.repository.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +16,9 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 data class ProfileUIState(
+    val nickname: String = "Player",
+    val username: String = "",
+    val avatarId: String = "avatar_1",
     val statistics: PlayerStatistics = PlayerStatistics(),
     val achievements: List<Achievement> = emptyList(),
     val totalGames: Int = 0,
@@ -26,19 +30,24 @@ data class ProfileUIState(
 class ProfileViewModel @Inject constructor(
     private val statisticsRepository: StatisticsRepository,
     private val achievementRepository: AchievementRepository,
-    private val gameHistoryRepository: GameHistoryRepository
+    private val gameHistoryRepository: GameHistoryRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     val profileState: StateFlow<ProfileUIState> = combine(
+        authRepository.profile,
         statisticsRepository.observeStatistics(),
         achievementRepository.observeAchievements(),
         gameHistoryRepository.observeAllGames()
-    ) { statistics, achievements, gameHistory ->
+    ) { profile, statistics, achievements, gameHistory ->
         val totalGames = gameHistory.size
         val wonGames = gameHistory.count { it.won }
         val winPercentage = if (totalGames > 0) (wonGames * 100.0) / totalGames else 0.0
 
         ProfileUIState(
+            nickname = profile?.nickname ?: "Player",
+            username = profile?.username ?: "",
+            avatarId = profile?.avatarId ?: "avatar_1",
             statistics = statistics,
             achievements = achievements,
             totalGames = totalGames,

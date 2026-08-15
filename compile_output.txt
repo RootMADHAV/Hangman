@@ -1,0 +1,101 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:clean
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugResValues
+> Task :app:injectCrashlyticsMappingFileIdDebug
+> Task :app:checkDebugAarMetadata
+> Task :app:processDebugGoogleServices
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:mergeDebugResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+
+> Task :app:kaptGenerateStubsDebugKotlin
+w: Kapt currently doesn't support language version 2.0+. Falling back to 1.9.
+
+> Task :app:kaptDebugKotlin
+
+> Task :app:compileDebugKotlin FAILED
+.\gradlew.bat : e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/data/repos
+itory/AuthRepositoryImpl.kt:45:27 Type of 'profile' is not a subtype of overridden property 'val profile: Flow<ERROR 
+CLASS: Symbol not found for PlayerProfileEntity?>' defined in 'com/LetterQuest/domain/repository/AuthRepository'.
+At line:4 char:53
++ ... v\hangman"; .\gradlew.bat clean compileDebugKotlin --no-daemon 2>&1 | ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///C:/U...uthRepository'.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/domain/repository/AuthRepo
+sitory.kt:5:37 Unresolved reference 'PlayerProfileEntity'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/domain/repository/AuthRepo
+sitory.kt:12:23 Unresolved reference 'PlayerProfileEntity'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:42:9 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:42:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:42:30 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:42:44 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:43:38 Unresolved reference 'size'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:44:36 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.count(predicate: (T) -> Boolean): Int
+fun BooleanArray.count(predicate: (Boolean) -> Boolean): Int
+fun ByteArray.count(predicate: (Byte) -> Boolean): Int
+fun CharArray.count(predicate: (Char) -> Boolean): Int
+fun DoubleArray.count(predicate: (Double) -> Boolean): Int
+fun FloatArray.count(predicate: (Float) -> Boolean): Int
+fun IntArray.count(predicate: (Int) -> Boolean): Int
+fun LongArray.count(predicate: (Long) -> Boolean): Int
+fun ShortArray.count(predicate: (Short) -> Boolean): Int
+fun <T> Iterable<T>.count(predicate: (T) -> Boolean): Int
+fun <K, V> Map<out K, V>.count(predicate: (Map.Entry<K, V>) -> Boolean): Int
+fun UByteArray.count(predicate: (UByte) -> Boolean): Int
+fun UIntArray.count(predicate: (UInt) -> Boolean): Int
+fun ULongArray.count(predicate: (ULong) -> Boolean): Int
+fun UShortArray.count(predicate: (UShort) -> Boolean): Int
+fun <T> Sequence<T>.count(predicate: (T) -> Boolean): Int
+fun CharSequence.count(predicate: (Char) -> Boolean): Int
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:44:42 Unresolved reference 'won'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:44:44 Unresolved reference 'it'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:45:59 None of the following candidates is applicable:
+fun BigDecimal.times(other: BigDecimal): BigDecimal
+fun BigInteger.times(other: BigInteger): BigInteger
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:48:33 Unresolved reference 'nickname'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:49:33 Unresolved reference 'username'.
+e: file:///C:/Users/gamer/Downloads/freemodeldev/hangman/app/src/main/kotlin/com/LetterQuest/ui/viewmodel/ProfileViewMo
+del.kt:50:33 Unresolved reference 'avatarId'.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing 
+org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 33s
+19 actionable tasks: 19 executed

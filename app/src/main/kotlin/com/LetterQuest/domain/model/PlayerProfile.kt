@@ -3,11 +3,12 @@ package com.LetterQuest.domain.model
 data class PlayerProfile(
     val playerId: String = "",
     val nickname: String = "Player",
+    val username: String = "",
     val avatarId: String = "avatar_1",
     val totalGamesPlayed: Int = 0,
     val totalTokensEarned: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
-    val lastPlayedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis()
 )
 
 data class AvatarOption(
@@ -36,4 +37,35 @@ object AvatarCatalog {
 
     fun getDefaultAvatar(): AvatarOption =
         avatars.firstOrNull() ?: AvatarOption("avatar_1", "Player", "🎮", "Default player avatar")
+}
+
+object UsernameValidator {
+    private const val MIN_LENGTH = 3
+    private const val MAX_LENGTH = 20
+    private val VALID_PATTERN = Regex("^[a-zA-Z][a-zA-Z0-9_-]*$")
+
+    fun validate(username: String): ValidationResult {
+        val trimmed = username.trim()
+        if (trimmed.isEmpty()) {
+            return ValidationResult.Error("Username cannot be empty")
+        }
+        if (trimmed.length < MIN_LENGTH) {
+            return ValidationResult.Error("Username must be at least $MIN_LENGTH characters")
+        }
+        if (trimmed.length > MAX_LENGTH) {
+            return ValidationResult.Error("Username must be at most $MAX_LENGTH characters")
+        }
+        if (trimmed.contains("@")) {
+            return ValidationResult.Error("Username cannot be an email address")
+        }
+        if (!VALID_PATTERN.matches(trimmed)) {
+            return ValidationResult.Error("Username must start with a letter and contain only letters, numbers, underscores, or hyphens")
+        }
+        return ValidationResult.Success(trimmed)
+    }
+}
+
+sealed class ValidationResult {
+    data class Success(val value: String) : ValidationResult()
+    data class Error(val message: String) : ValidationResult()
 }
