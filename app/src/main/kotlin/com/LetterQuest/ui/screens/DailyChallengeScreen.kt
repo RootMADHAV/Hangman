@@ -26,24 +26,39 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.LetterQuest.domain.model.DailyChallenge
+import com.LetterQuest.domain.model.RewardType
 import com.LetterQuest.ui.navigation.NavigationRoute
 import com.LetterQuest.ui.viewmodel.DailyChallengeViewModel
+import com.LetterQuest.ui.viewmodel.GameViewModel
+import com.LetterQuest.ui.viewmodel.RewardedAdViewModel
+import com.LetterQuest.util.findActivity
 
 @Composable
 fun DailyChallengeScreen(
     navController: NavHostController,
-    viewModel: DailyChallengeViewModel = hiltViewModel()
+    viewModel: DailyChallengeViewModel = hiltViewModel(),
+    gameViewModel: GameViewModel = hiltViewModel(),
+    rewardedAdViewModel: RewardedAdViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsState().value
     val streak = viewModel.streak.collectAsState().value
+    val context = LocalContext.current
+
+    LaunchedEffect(uiState.adRetryAvailable) {
+        if (uiState.adRetryAvailable) {
+            rewardedAdViewModel.loadRewardedAd(context, RewardType.DAILY_RETRY)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -148,21 +163,35 @@ fun DailyChallengeScreen(
                     }
 
                     else -> {
-                        val rewardText = if (uiState.hasAttempted && uiState.adRetryAvailable) {
-                            "Watch an ad for a second chance, or try again tomorrow!"
-                        } else {
-                            "Win to earn a 🪙 ${DailyChallenge.COMPLETION_BONUS_TOKENS} bonus " +
-                                "and extend your streak."
-                        }
                         Text(
-                            rewardText,
+                            if (uiState.hasAttempted && uiState.adRetryAvailable) {
+                                "Watch an ad for a second chance!"
+                            } else {
+                                "Win to earn a 🪙 ${DailyChallenge.COMPLETION_BONUS_TOKENS} bonus " +
+                                    "and extend your streak."
+                            },
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
                         Button(
                             onClick = {
-                                navController.navigate(NavigationRoute.DailyGameplay.route)
+                                if (uiState.hasAttempted && uiState.adRetryAvailable) {
+                                    val activity = context.findActivity()
+                                    if (activity != null) {
+                                        val shown = rewardedAdViewModel.showRewardedAd(
+                                            RewardType.DAILY_RETRY, activity, context
+                                        ) {
+                                            gameViewModel.useDailyAdRetry()
+                                            navController.navigate(NavigationRoute.DailyGameplay.route)
+                                        }
+                                        if (!shown) {
+                                            rewardedAdViewModel.loadRewardedAd(context, RewardType.DAILY_RETRY)
+                                        }
+                                    }
+                                } else {
+                                    navController.navigate(NavigationRoute.DailyGameplay.route)
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()

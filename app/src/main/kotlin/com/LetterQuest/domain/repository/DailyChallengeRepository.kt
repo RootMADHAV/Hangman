@@ -17,5 +17,7 @@ interface DailyChallengeRepository {
 
     suspend fun hasAdRetryAvailable(): Result<Boolean>
 
+    fun hasAdRetryAvailableFlow(): Flow<Boolean>
+
     suspend fun markAdRetryUsed(): Result<Unit>
 }

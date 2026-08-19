@@ -200,19 +200,6 @@ fun GameplayScreen(
         return
     }
 
-    // Sound feedback
-    val totalGuesses = gameStatus.guessedLetters.size + gameStatus.incorrectGuesses.size
-    var soundedGuessCount by rememberSaveable { mutableIntStateOf(totalGuesses) }
-    LaunchedEffect(totalGuesses) {
-        if (totalGuesses == soundedGuessCount) return@LaunchedEffect
-        soundedGuessCount = totalGuesses
-        when (guessResult) {
-            GuessResult.Correct -> soundViewModel.playCorrectGuess()
-            GuessResult.Incorrect -> soundViewModel.playIncorrectGuess()
-            else -> Unit
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(

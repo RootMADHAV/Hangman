@@ -54,7 +54,6 @@ import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.GameViewModel
 import com.LetterQuest.ui.viewmodel.NotificationViewModel
 import com.LetterQuest.ui.viewmodel.RewardedAdViewModel
-import com.LetterQuest.ui.viewmodel.SoundViewModel
 import com.LetterQuest.util.findActivity
 
 @Composable
@@ -64,7 +63,6 @@ fun GameResultsScreen(
     gameViewModel: GameViewModel,
     notificationViewModel: NotificationViewModel = hiltViewModel(),
     adViewModel: AdViewModel = hiltViewModel(),
-    soundViewModel: SoundViewModel = hiltViewModel(),
     rewardedAdViewModel: RewardedAdViewModel = hiltViewModel()
 ) {
     val notificationState = notificationViewModel.notificationState.collectAsState().value
