@@ -47,13 +47,19 @@ class DailyChallengeRepositoryLocal @Inject constructor(
 
             val completedKey = preferences[LAST_COMPLETED_DATE]
             val isCompleted = completedKey == todayKey
+            val attemptedKey = preferences[LAST_ATTEMPT_DATE]
+            val hasAttempted = attemptedKey == todayKey
+            val adRetryUsedKey = preferences[AD_RETRY_USED_DATE]
+            val adRetryAvailable = hasAttempted && adRetryUsedKey != todayKey
 
             Result.success(
                 DailyChallenge(
                     dateKey = todayKey,
                     word = word,
                     isCompleted = isCompleted,
-                    wasWon = isCompleted && (preferences[LAST_RESULT_WON] ?: false)
+                    wasWon = isCompleted && (preferences[LAST_RESULT_WON] ?: false),
+                    hasAttempted = hasAttempted,
+                    adRetryAvailable = adRetryAvailable
                 )
             )
         } catch (e: Exception) {
@@ -84,9 +90,49 @@ class DailyChallengeRepositoryLocal @Inject constructor(
                 preferences[LONGEST_STREAK] = maxOf(preferences[LONGEST_STREAK] ?: 0, newCurrent)
                 preferences[LAST_COMPLETED_DATE] = todayKey
                 preferences[LAST_RESULT_WON] = won
+                preferences[LAST_ATTEMPT_DATE] = todayKey
+                preferences[AD_RETRY_USED_DATE] = todayKey
             }
 
             Result.success(dataStore.data.first().toStreak())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun recordAttempt(): Result<Unit> {
+        return try {
+            val today = LocalDate.now(clock)
+            val todayKey = DailyChallenge.dateKeyFor(today)
+            dataStore.edit { preferences ->
+                preferences[LAST_ATTEMPT_DATE] = todayKey
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun hasAdRetryAvailable(): Result<Boolean> {
+        return try {
+            val todayKey = DailyChallenge.dateKeyFor(LocalDate.now(clock))
+            val preferences = dataStore.data.first()
+            val hasAttempted = preferences[LAST_ATTEMPT_DATE] == todayKey
+            val adRetryUsed = preferences[AD_RETRY_USED_DATE] == todayKey
+            Result.success(hasAttempted && !adRetryUsed)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun markAdRetryUsed(): Result<Unit> {
+        return try {
+            val today = LocalDate.now(clock)
+            val todayKey = DailyChallenge.dateKeyFor(today)
+            dataStore.edit { preferences ->
+                preferences[AD_RETRY_USED_DATE] = todayKey
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -106,5 +152,7 @@ class DailyChallengeRepositoryLocal @Inject constructor(
         val LONGEST_STREAK = intPreferencesKey("daily_longest_streak")
         val LAST_COMPLETED_DATE = stringPreferencesKey("daily_last_completed_date")
         val LAST_RESULT_WON = booleanPreferencesKey("daily_last_result_won")
+        val LAST_ATTEMPT_DATE = stringPreferencesKey("daily_last_attempt_date")
+        val AD_RETRY_USED_DATE = stringPreferencesKey("daily_ad_retry_used_date")
     }
 }

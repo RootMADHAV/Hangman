@@ -27,7 +27,9 @@ data class GameStatus(
     /** Words completed so far in this run (timed mode: words within one session). */
     val timedWordsSolved: Int = 0,
     /** Star rating (1–3) computed when a Classic level is won; null until then. */
-    val approvedStarRating: Int? = null
+    val approvedStarRating: Int? = null,
+    /** Perks activated for this game. */
+    val perks: Set<ShopItem> = emptySet()
 ) {
     val revealedWord: String
         get() = word.normalizedValue.map { letter ->

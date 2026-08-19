@@ -6,6 +6,7 @@ import com.LetterQuest.domain.model.PlayerStatistics
 import com.LetterQuest.domain.repository.AchievementRepository
 import com.LetterQuest.domain.repository.DailyChallengeRepository
 import com.LetterQuest.domain.repository.GameHistoryRepository
+import com.LetterQuest.domain.repository.ShopRepository
 import com.LetterQuest.domain.repository.TokenRepository
 import javax.inject.Inject
 
@@ -13,16 +14,19 @@ class AchievementUnlocker @Inject constructor(
     private val achievementRepository: AchievementRepository,
     private val gameHistoryRepository: GameHistoryRepository,
     private val tokenRepository: TokenRepository,
-    private val dailyChallengeRepository: DailyChallengeRepository
+    private val dailyChallengeRepository: DailyChallengeRepository,
+    private val shopRepository: ShopRepository
 ) {
     companion object {
-        private const val FAST_SOLVE_SECONDS = 30
+        private const val FAST_SOLVE_SECONDS = 5
         private const val STREAK_FIVE = 5
         private const val STREAK_TEN = 10
         private const val LUCKY_SEVEN_COUNT = 7
         private const val COMEBACK_REMAINING_ATTEMPTS = 1
         private const val CATEGORY_WINS_TARGET = 5
         private const val TOKEN_HOARD_TARGET = 1000
+        private const val PESOS_KING_TARGET = 5000
+        private const val WEEKLY_CHALLENGE_TARGET = 7
     }
 
     /**
@@ -38,9 +42,11 @@ class AchievementUnlocker @Inject constructor(
         usedHint: Boolean = false,
         isTimedWord: Boolean = false
     ) {
-        // Always-cheap lifetime counters; safe to run on every game end.
         checkLuckySeven(statistics)
         checkTokenCollector()
+        checkPesosKing()
+        checkRichMan()
+        checkThroneBreaker()
 
         if (gameStatus.state != GameState.WON) return
 
@@ -120,6 +126,26 @@ class AchievementUnlocker @Inject constructor(
         val tokens = tokenRepository.getTokens().getOrNull() ?: return
         if (tokens.balance >= TOKEN_HOARD_TARGET) {
             achievementRepository.unlockAchievement("token_collector")
+        }
+    }
+
+    private suspend fun checkPesosKing() {
+        val tokens = tokenRepository.getTokens().getOrNull() ?: return
+        if (tokens.balance >= PESOS_KING_TARGET) {
+            achievementRepository.unlockAchievement("pesosking")
+        }
+    }
+
+    private suspend fun checkRichMan() {
+        if (shopRepository.hasMadeIAP()) {
+            achievementRepository.unlockAchievement("richman")
+        }
+    }
+
+    private suspend fun checkThroneBreaker() {
+        val streak = dailyChallengeRepository.getStreak().getOrNull() ?: return
+        if (streak.longest >= WEEKLY_CHALLENGE_TARGET) {
+            achievementRepository.unlockAchievement("thronebreaker")
         }
     }
 }

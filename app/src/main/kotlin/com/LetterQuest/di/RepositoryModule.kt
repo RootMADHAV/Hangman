@@ -10,14 +10,19 @@ import com.LetterQuest.data.local.repository.GameHistoryRepositoryLocal
 import com.LetterQuest.data.local.repository.PreferencesRepositoryLocal
 import com.LetterQuest.data.local.repository.ShopRepositoryLocal
 import com.LetterQuest.data.local.repository.StatisticsRepositoryLocal
+import com.LetterQuest.data.local.repository.SyncQueue
 import com.LetterQuest.data.local.repository.TokenRepositoryLocal
 import com.LetterQuest.data.repository.AuthRepositoryImpl
+import com.LetterQuest.data.repository.CloudSyncRepositoryImpl
+import com.LetterQuest.data.repository.LeaderboardRepositoryImpl
 import com.LetterQuest.data.repository.WordRepositoryImpl
 import com.LetterQuest.domain.repository.AchievementRepository
 import com.LetterQuest.domain.repository.AuthRepository
+import com.LetterQuest.domain.repository.CloudSyncRepository
 import com.LetterQuest.domain.repository.DailyChallengeRepository
 import com.LetterQuest.domain.repository.DailyLoginRepository
 import com.LetterQuest.domain.repository.GameHistoryRepository
+import com.LetterQuest.domain.repository.LeaderboardRepository
 import com.LetterQuest.domain.repository.PreferencesRepository
 import com.LetterQuest.domain.repository.ShopRepository
 import com.LetterQuest.domain.repository.StatisticsRepository
@@ -73,12 +78,29 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindCloudSyncRepository(impl: CloudSyncRepositoryImpl): CloudSyncRepository
+
     companion object {
+        @Provides
+        @Singleton
+        fun provideLeaderboardRepository(
+            impl: LeaderboardRepositoryImpl
+        ): LeaderboardRepository = impl
+
         @Provides
         @Singleton
         fun provideTokenRepository(
             @ApplicationContext context: Context,
             dataStore: DataStore<Preferences>
         ): TokenRepository = TokenRepositoryLocal(dataStore, context)
+
+        @Provides
+        @Singleton
+        fun provideSyncQueue(
+            dataStore: DataStore<Preferences>,
+            cloudSyncRepository: CloudSyncRepository
+        ): SyncQueue = SyncQueue(dataStore, cloudSyncRepository)
     }
 }

@@ -7,5 +7,7 @@ package com.LetterQuest.domain.usecase
 interface MusicPlayer {
     fun start()
     fun stop()
+    fun pause()
+    fun resume()
     fun release()
 }

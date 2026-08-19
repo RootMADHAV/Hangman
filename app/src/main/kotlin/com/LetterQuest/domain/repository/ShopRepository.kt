@@ -18,4 +18,8 @@ interface ShopRepository {
      * Clears all activated power-ups at the start of a new game.
      */
     suspend fun clearActivatedPerks(): Result<Unit>
+
+    suspend fun hasMadeIAP(): Boolean
+
+    suspend fun recordIAP(): Result<Unit>
 }

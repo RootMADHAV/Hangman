@@ -1,6 +1,7 @@
 package com.LetterQuest.data.local.repository
 
 import com.LetterQuest.data.local.dao.AchievementDao
+import com.LetterQuest.data.local.entity.AchievementEntity
 import com.LetterQuest.data.local.entity.toEntity
 import com.LetterQuest.domain.model.Achievement
 import com.LetterQuest.domain.model.AchievementCatalog
@@ -89,6 +90,17 @@ class AchievementRepositoryLocal @Inject constructor(
         try {
             achievementDao.deleteAll()
             syncAchievementCatalog()
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun syncAchievements(achievements: List<Achievement>): Result<Unit> =
+        try {
+            achievementDao.deleteAll()
+            for (achievement in achievements) {
+                achievementDao.insertOrUpdate(AchievementEntity.fromAchievement(achievement))
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

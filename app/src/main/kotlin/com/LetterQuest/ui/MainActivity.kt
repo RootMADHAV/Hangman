@@ -175,8 +175,8 @@ private fun MainApp(startDestination: String, showRatePrompt: Boolean) {
         if (showRateDialog) {
             AlertDialog(
                 onDismissRequest = { showRateDialog = false },
-                title = { Text("Enjoying Hangman?") },
-                text = { Text("Enjoying Hangman? Rate us!") },
+                title = { Text("Enjoying Letter Quest?") },
+                text = { Text("Enjoying Letter Quest? Rate us!") },
                 confirmButton = {
                     TextButton(onClick = {
                         showRateDialog = false

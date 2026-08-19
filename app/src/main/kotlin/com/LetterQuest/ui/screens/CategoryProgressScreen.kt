@@ -35,15 +35,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.LetterQuest.domain.model.CategoryProgress
 import com.LetterQuest.ui.components.BannerAd
+import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.CategoryProgressViewModel
 import kotlin.math.roundToInt
 
 @Composable
 fun CategoryProgressScreen(
     navController: NavHostController,
+    adViewModel: AdViewModel = hiltViewModel(),
     viewModel: CategoryProgressViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsState().value
+    val adState = adViewModel.adState.collectAsState().value
 
     Scaffold(
         topBar = {
@@ -56,7 +59,7 @@ fun CategoryProgressScreen(
                 }
             )
         },
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
         Surface(
             modifier = Modifier

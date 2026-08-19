@@ -96,7 +96,7 @@ fun HomeScreen(
                             Text("🎮", fontSize = 52.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "Hangman",
+                                "Letter Quest",
                                 fontSize = 36.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer

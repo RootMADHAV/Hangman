@@ -44,6 +44,7 @@ class GameHistoryRepositoryLocalTest {
     @Test
     fun testGetConsecutiveWins() = runTest {
         val won1 = GameHistoryEntity(
+            uuid = "uuid1",
             word = "test",
             difficulty = "EASY",
             won = true,
@@ -54,6 +55,7 @@ class GameHistoryRepositoryLocalTest {
             playedAt = System.currentTimeMillis()
         )
         val won2 = GameHistoryEntity(
+            uuid = "uuid2",
             word = "kotlin",
             difficulty = "MEDIUM",
             won = true,
@@ -64,6 +66,7 @@ class GameHistoryRepositoryLocalTest {
             playedAt = System.currentTimeMillis() + 1000
         )
         val lost = GameHistoryEntity(
+            uuid = "uuid3",
             word = "java",
             difficulty = "HARD",
             won = false,
@@ -86,11 +89,11 @@ class GameHistoryRepositoryLocalTest {
     fun testGetMaxWinStreak() = runTest {
         val base = System.currentTimeMillis()
         val games = listOf(
-            GameHistoryEntity(word = "a", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base),
-            GameHistoryEntity(word = "b", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 1),
-            GameHistoryEntity(word = "c", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 2),
-            GameHistoryEntity(word = "d", difficulty = "EASY", won = false, score = 0,   guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 3),
-            GameHistoryEntity(word = "e", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 4)
+            GameHistoryEntity(uuid = "a", word = "a", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base),
+            GameHistoryEntity(uuid = "b", word = "b", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 1),
+            GameHistoryEntity(uuid = "c", word = "c", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 2),
+            GameHistoryEntity(uuid = "d", word = "d", difficulty = "EASY", won = false, score = 0,   guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 3),
+            GameHistoryEntity(uuid = "e", word = "e", difficulty = "EASY", won = true,  score = 100, guessedLetters = "", incorrectGuesses = "", elapsedSeconds = 10, playedAt = base + 4)
         )
         mockDao.games = games.sortedByDescending { it.playedAt }
 
@@ -103,6 +106,7 @@ class GameHistoryRepositoryLocalTest {
     @Test
     fun testGetGameCount() = runTest {
         val game1 = GameHistoryEntity(
+            uuid = "uuid1",
             word = "test",
             difficulty = "EASY",
             won = true,
@@ -112,6 +116,7 @@ class GameHistoryRepositoryLocalTest {
             elapsedSeconds = 30
         )
         val game2 = GameHistoryEntity(
+            uuid = "uuid2",
             word = "kotlin",
             difficulty = "MEDIUM",
             won = false,
@@ -172,5 +177,23 @@ class GameHistoryRepositoryLocalTest {
         }
 
         override suspend fun getGameCount(): Int = gameCount
+
+        override suspend fun getByUuid(uuid: String): GameHistoryEntity? =
+            games.find { it.uuid == uuid }
+
+        override suspend fun updateScore(uuid: String, score: Int, sessionScore: Int, updatedAt: Long) {
+            games = games.map {
+                if (it.uuid == uuid) it.copy(score = score, sessionScore = sessionScore, updatedAt = updatedAt) else it
+            }
+        }
+
+        override suspend fun upsertByUuid(uuid: String, word: String, difficulty: String, won: Boolean, score: Int, sessionScore: Int, guessedLetters: String, incorrectGuesses: String, elapsedSeconds: Long, playedAt: Long, updatedAt: Long, category: String?) {
+            val existing = games.find { it.uuid == uuid }
+            games = if (existing != null) {
+                games.map { if (it.uuid == uuid) it.copy(score = score, sessionScore = sessionScore, updatedAt = updatedAt) else it }
+            } else {
+                games + GameHistoryEntity(uuid = uuid, word = word, difficulty = difficulty, won = won, score = score, sessionScore = sessionScore, guessedLetters = guessedLetters, incorrectGuesses = incorrectGuesses, elapsedSeconds = elapsedSeconds, playedAt = playedAt, updatedAt = updatedAt, category = category)
+            }
+        }
     }
 }

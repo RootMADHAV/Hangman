@@ -31,7 +31,7 @@ fun PrivacyPolicyScreen(navController: NavHostController) {
                 Last updated: August 2026
 
                 1. Information We Collect
-                Hangman stores your game progress, preferences, statistics, and achievements locally on your device. We do not collect or transmit personal information to our own servers.
+                Letter Quest stores your game progress, preferences, statistics, and achievements locally on your device. We do not collect or transmit personal information to our own servers.
 
                 2. Advertising
                 The app may display ads provided by Google AdMob. AdMob may collect device identifiers and usage data in accordance with Google's privacy policy. You can manage ad personalization in your Google account settings.
@@ -63,7 +63,7 @@ fun TermsScreen(navController: NavHostController) {
                 Last updated: August 2026
 
                 1. Acceptance
-                By using Hangman, you agree to these terms. If you do not agree, please uninstall the app.
+                 By using Letter Quest, you agree to these terms. If you do not agree, please uninstall the app.
 
                 2. License
                 We grant you a personal, non-exclusive, non-transferable license to use the app for entertainment purposes only.

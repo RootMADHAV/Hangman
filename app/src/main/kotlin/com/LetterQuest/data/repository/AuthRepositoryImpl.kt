@@ -412,7 +412,6 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun signOut(): AuthResult<Unit> {
         return try {
             firebaseAuth.signOut()
-            resetLocalData()
             AuthResult.Success
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Sign-out failed")
@@ -551,6 +550,29 @@ class AuthRepositoryImpl @Inject constructor(
             AuthResult.Success
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Failed to update avatar")
+        }
+    }
+
+    override suspend fun importProfile(profile: PlayerProfile): AuthResult<Unit> {
+        return try {
+            val existing = getProfileEntity()
+            val entity = PlayerProfileEntity(
+                id = existing?.id ?: "local_profile",
+                nickname = profile.nickname,
+                username = profile.username,
+                avatarId = profile.avatarId,
+                totalGamesPlayed = profile.totalGamesPlayed,
+                totalTokensEarned = profile.totalTokensEarned,
+                createdAt = profile.createdAt,
+                updatedAt = System.currentTimeMillis(),
+                authProvider = existing?.authProvider ?: PlayerProfileEntity.AUTH_PROVIDER_EMAIL,
+                firebaseUid = existing?.firebaseUid ?: profile.playerId,
+                email = existing?.email ?: profile.username
+            )
+            saveProfile(entity)
+            AuthResult.Success
+        } catch (e: Exception) {
+            AuthResult.Error(e.message ?: "Failed to import profile")
         }
     }
 

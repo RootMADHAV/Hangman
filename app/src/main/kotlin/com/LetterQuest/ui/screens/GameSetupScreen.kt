@@ -44,6 +44,7 @@ import androidx.navigation.NavHostController
 import com.LetterQuest.domain.model.ChallengeMode
 import com.LetterQuest.domain.model.Difficulty
 import com.LetterQuest.domain.model.GameMode
+import com.LetterQuest.domain.model.UserTokens
 import com.LetterQuest.ui.navigation.NavigationRoute
 import com.LetterQuest.ui.viewmodel.GameViewModel
 
@@ -180,7 +181,7 @@ fun GameSetupScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "⏱️ ${GameMode.TIMED_SESSION_SECONDS}s on the clock • " +
-                        "+${GameMode.TOKENS_PER_TIMED_WORD}🪙 per word solved • hints half price",
+                        "+${UserTokens.EARNED_PER_TIMED_WORD}🪙 per word solved • hints half price",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center

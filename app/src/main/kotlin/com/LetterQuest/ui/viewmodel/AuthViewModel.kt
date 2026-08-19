@@ -6,6 +6,7 @@ import com.LetterQuest.domain.model.AuthResult
 import com.LetterQuest.domain.model.AuthState
 import com.LetterQuest.domain.repository.AuthRepository
 import com.LetterQuest.domain.usecase.BackupUserDataUseCase
+import com.LetterQuest.domain.usecase.CloudSyncUseCase
 import com.LetterQuest.domain.usecase.LinkGuestToEmailUseCase
 import com.LetterQuest.domain.usecase.LinkGuestToGoogleUseCase
 import com.LetterQuest.domain.usecase.ReloadUserUseCase
@@ -61,7 +62,8 @@ class AuthViewModel @Inject constructor(
     private val updateNicknameUseCase: UpdateNicknameUseCase,
     private val updateUsernameUseCase: UpdateUsernameUseCase,
     private val updateAvatarUseCase: UpdateAvatarUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val cloudSyncUseCase: CloudSyncUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -81,6 +83,7 @@ class AuthViewModel @Inject constructor(
             when (val result = signInWithGoogleUseCase(idToken)) {
                 is AuthResult.Success -> {
                     restoreUserDataUseCase()
+                    cloudSyncUseCase.syncAll()
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
                 is AuthResult.Error -> {
@@ -100,6 +103,7 @@ class AuthViewModel @Inject constructor(
             when (val result = signInWithEmailUseCase(email, password)) {
                 is AuthResult.Success -> {
                     restoreUserDataUseCase()
+                    cloudSyncUseCase.syncAll()
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
                 is AuthResult.Error -> {
@@ -119,6 +123,7 @@ class AuthViewModel @Inject constructor(
             when (val result = signUpWithEmailUseCase(email, password)) {
                 is AuthResult.Success -> {
                     sendEmailVerificationUseCase()
+                    cloudSyncUseCase.syncAll()
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
                 is AuthResult.Error -> {
@@ -155,6 +160,8 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = linkGuestToEmailUseCase(email, password)) {
                 is AuthResult.Success -> {
+                    restoreUserDataUseCase()
+                    cloudSyncUseCase.syncAll()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isEmailLinkMode = false
@@ -176,6 +183,8 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = linkGuestToGoogleUseCase(idToken)) {
                 is AuthResult.Success -> {
+                    restoreUserDataUseCase()
+                    cloudSyncUseCase.syncAll()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isGoogleLinkMode = false

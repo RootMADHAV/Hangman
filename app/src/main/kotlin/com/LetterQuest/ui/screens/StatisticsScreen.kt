@@ -33,15 +33,18 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.LetterQuest.ui.components.BannerAd
+import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.HomeViewModel
 
 @Composable
 fun StatisticsScreen(
     navController: NavHostController,
+    adViewModel: AdViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel = hiltViewModel()
 ) {
     val statistics = homeViewModel.statistics.collectAsState()
     val stats = statistics.value
+    val adState = adViewModel.adState.collectAsState().value
 
     Scaffold(
         topBar = {
@@ -54,7 +57,7 @@ fun StatisticsScreen(
                 }
             )
         },
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
         Column(
             modifier = Modifier

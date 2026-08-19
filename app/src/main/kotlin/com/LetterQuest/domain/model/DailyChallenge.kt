@@ -13,12 +13,14 @@ data class DailyChallenge(
     val dateKey: String,
     val word: Word,
     val isCompleted: Boolean = false,
-    val wasWon: Boolean = false
+    val wasWon: Boolean = false,
+    val hasAttempted: Boolean = false,
+    val adRetryAvailable: Boolean = false
 ) {
     companion object {
         private val KEY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-        /** Bonus paid on top of the normal win reward, to make the daily worth returning for. */
+        /** Total tokens awarded for completing the daily challenge (capped at this value). */
         const val COMPLETION_BONUS_TOKENS = 20
 
         fun dateKeyFor(date: LocalDate): String = date.format(KEY_FORMAT)

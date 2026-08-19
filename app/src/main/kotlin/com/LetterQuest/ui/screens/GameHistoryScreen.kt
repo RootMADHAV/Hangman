@@ -35,15 +35,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.LetterQuest.domain.model.GameHistoryEntry
 import com.LetterQuest.ui.components.BannerAd
+import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.GameHistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameHistoryScreen(
     navController: NavHostController,
+    adViewModel: AdViewModel = hiltViewModel(),
     viewModel: GameHistoryViewModel = hiltViewModel()
 ) {
     val games = viewModel.games.collectAsState().value
+    val adState = adViewModel.adState.collectAsState().value
 
     Scaffold(
         topBar = {
@@ -56,7 +59,7 @@ fun GameHistoryScreen(
                 }
             )
         },
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
         if (games.isEmpty()) {
             Box(

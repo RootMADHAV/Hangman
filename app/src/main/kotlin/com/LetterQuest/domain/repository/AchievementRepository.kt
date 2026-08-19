@@ -10,4 +10,5 @@ interface AchievementRepository {
     suspend fun unlockAchievement(achievementId: String): Result<Unit>
     suspend fun resetAchievements(): Result<Unit>
     suspend fun syncAchievementCatalog(): Result<Unit>
+    suspend fun syncAchievements(achievements: List<Achievement>): Result<Unit>
 }

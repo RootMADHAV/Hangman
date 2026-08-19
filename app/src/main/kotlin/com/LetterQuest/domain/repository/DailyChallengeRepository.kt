@@ -9,12 +9,13 @@ interface DailyChallengeRepository {
 
     suspend fun getStreak(): Result<DailyStreak>
 
-    /** Today's puzzle, with its completion state resolved from storage. */
     suspend fun getTodaysChallenge(): Result<DailyChallenge>
 
-    /**
-     * Marks today complete and advances the streak. Recording the same day twice is a
-     * no-op so a replay cannot inflate the streak.
-     */
     suspend fun recordCompletion(won: Boolean): Result<DailyStreak>
+
+    suspend fun recordAttempt(): Result<Unit>
+
+    suspend fun hasAdRetryAvailable(): Result<Boolean>
+
+    suspend fun markAdRetryUsed(): Result<Unit>
 }

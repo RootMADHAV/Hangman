@@ -72,5 +72,6 @@ class GameHistoryViewModelTest {
         override suspend fun getMaxWinStreak() = Result.success(0)
         override suspend fun getGameCount() = Result.success(0)
         override suspend fun deleteAll() = Result.success(Unit)
+        override suspend fun syncGames(games: List<GameHistoryEntry>) = Result.success(Unit)
     }
 }

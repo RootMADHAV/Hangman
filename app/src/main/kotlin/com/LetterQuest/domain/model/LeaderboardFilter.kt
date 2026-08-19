@@ -30,9 +30,23 @@ enum class LeaderboardTimeFilter {
         }
 }
 
+enum class LeaderboardDisplayMode {
+    ALL,
+    INDIVIDUAL_WINS,
+    STREAKS;
+
+    val displayName: String
+        get() = when (this) {
+            ALL -> "All Entries"
+            INDIVIDUAL_WINS -> "Individual Wins"
+            STREAKS -> "Streak Totals"
+        }
+}
+
 data class LeaderboardFilterConfig(
     val sortBy: LeaderboardSortBy = LeaderboardSortBy.SCORE_DESC,
     val timeFilter: LeaderboardTimeFilter = LeaderboardTimeFilter.ALL_TIME,
     val selectedCategory: String? = null,
-    val difficultyFilter: Difficulty? = null
+    val difficultyFilter: Difficulty? = null,
+    val displayMode: LeaderboardDisplayMode = LeaderboardDisplayMode.ALL
 )

@@ -63,5 +63,6 @@ class NotificationViewModelTest {
         override fun observeAchievements(): Flow<List<Achievement>> = achievementsFlow.asStateFlow()
         override suspend fun resetAchievements() = Result.success(Unit)
         override suspend fun syncAchievementCatalog() = Result.success(Unit)
+        override suspend fun syncAchievements(achievements: List<Achievement>) = Result.success(Unit)
     }
 }

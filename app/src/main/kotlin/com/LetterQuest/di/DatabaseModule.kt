@@ -5,12 +5,15 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.LetterQuest.data.local.HangmanDatabase
 import com.LetterQuest.data.local.dao.AchievementDao
 import com.LetterQuest.data.local.dao.GameHistoryDao
 import com.LetterQuest.data.local.dao.StatisticsDao
+import com.LetterQuest.data.local.entity.StatisticsEntity
 import com.LetterQuest.data.local.repository.TokenRepositoryLocal
 import com.LetterQuest.domain.repository.TokenRepository
 import dagger.Module
@@ -36,7 +39,13 @@ object DatabaseModule {
             context,
             HangmanDatabase::class.java,
             "hangman_database"
-        ).addMigrations(HangmanDatabase.MIGRATION_2_3)
+        ).addMigrations(HangmanDatabase.MIGRATION_2_3, HangmanDatabase.MIGRATION_3_4, HangmanDatabase.MIGRATION_4_5)
+            .addCallback(object : RoomDatabase.Callback() {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    super.onCreate(db)
+                    db.execSQL("INSERT OR IGNORE INTO statistics (id, gamesPlayed, gamesWon, gamesLost, totalScore, highestScore, averageScore, winRate) VALUES (1, 0, 0, 0, 0, 0, 0.0, 0.0)")
+                }
+            })
             .build()
     }
 

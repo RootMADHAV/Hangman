@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.LetterQuest.ui.components.BannerAd
+import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.HomeViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -43,12 +44,14 @@ import java.util.Locale
 @Composable
 fun AchievementsScreen(
     navController: NavHostController,
+    adViewModel: AdViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel = hiltViewModel()
 ) {
     val achievements = homeViewModel.achievements.collectAsState()
     val achievementsList = achievements.value
     val unlockedCount = achievementsList.count { it.isUnlocked }
     val totalCount = achievementsList.size
+    val adState = adViewModel.adState.collectAsState().value
 
     Scaffold(
         topBar = {
@@ -61,7 +64,7 @@ fun AchievementsScreen(
                 }
             )
         },
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
         Column(
             modifier = Modifier

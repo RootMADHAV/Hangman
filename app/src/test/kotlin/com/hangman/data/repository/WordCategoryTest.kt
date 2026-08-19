@@ -69,10 +69,6 @@ class WordCategoryTest {
         val categories = repository.getCategories().getOrNull() ?: emptyList()
 
         categories.forEach { category ->
-            // famous_quotes are EASY-only trivia, so it is exempt from the
-            // every-difficulty coverage rule.
-            if (category.id == "famous_quotes") return@forEach
-
             Difficulty.entries.forEach { difficulty ->
                 val result = repository.getRandomWord(difficulty, category.id)
                 assertTrue(

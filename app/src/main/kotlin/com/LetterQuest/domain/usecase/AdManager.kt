@@ -27,6 +27,7 @@ class AdManager @Inject constructor() {
     private var interstitialAd: InterstitialAd? = null
     private var hintsRewardedAd: RewardedAd? = null
     private var coinsRewardedAd: RewardedAd? = null
+    private var dailyRetryRewardedAd: RewardedAd? = null
 
     fun setAdsRemoved(removed: Boolean) {
         _adsRemoved.value = removed
@@ -103,6 +104,7 @@ class AdManager @Inject constructor() {
         val adUnitId = when (rewardType) {
             RewardType.HINT -> AdConfig.REWARDED_HINTS
             RewardType.COINS -> AdConfig.REWARDED_COINS
+            RewardType.DAILY_RETRY -> AdConfig.REWARDED_DAILY_RETRY
         }
 
         val adRequest = AdRequest.Builder().build()
@@ -115,6 +117,7 @@ class AdManager @Inject constructor() {
                     when (rewardType) {
                         RewardType.HINT -> hintsRewardedAd = ad
                         RewardType.COINS -> coinsRewardedAd = ad
+                        RewardType.DAILY_RETRY -> dailyRetryRewardedAd = ad
                     }
                     onLoaded(ad)
                 }
@@ -123,6 +126,7 @@ class AdManager @Inject constructor() {
                     when (rewardType) {
                         RewardType.HINT -> hintsRewardedAd = null
                         RewardType.COINS -> coinsRewardedAd = null
+                        RewardType.DAILY_RETRY -> dailyRetryRewardedAd = null
                     }
                     onLoaded(null)
                 }
@@ -134,6 +138,7 @@ class AdManager @Inject constructor() {
         return when (rewardType) {
             RewardType.HINT -> hintsRewardedAd
             RewardType.COINS -> coinsRewardedAd
+            RewardType.DAILY_RETRY -> dailyRetryRewardedAd
         }
     }
 
@@ -141,6 +146,7 @@ class AdManager @Inject constructor() {
         when (rewardType) {
             RewardType.HINT -> hintsRewardedAd = null
             RewardType.COINS -> coinsRewardedAd = null
+            RewardType.DAILY_RETRY -> dailyRetryRewardedAd = null
         }
     }
 }

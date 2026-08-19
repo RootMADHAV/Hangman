@@ -42,4 +42,6 @@ interface AuthRepository {
     suspend fun updateUsername(username: String): AuthResult<Unit>
 
     suspend fun updateAvatar(avatarId: String): AuthResult<Unit>
+
+    suspend fun importProfile(profile: PlayerProfile): AuthResult<Unit>
 }

@@ -13,7 +13,7 @@ import com.LetterQuest.data.local.entity.StatisticsEntity
 
 @Database(
     entities = [StatisticsEntity::class, AchievementEntity::class, GameHistoryEntity::class],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 abstract class HangmanDatabase : RoomDatabase() {
@@ -26,6 +26,21 @@ abstract class HangmanDatabase : RoomDatabase() {
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE game_history ADD COLUMN category TEXT")
+            }
+        }
+
+        /** Adds uuid and updatedAt columns for cloud sync. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE game_history ADD COLUMN uuid TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE game_history ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /** Adds unique index on uuid to prevent duplicate game history entries. */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_game_history_uuid ON game_history (uuid)")
             }
         }
     }

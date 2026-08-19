@@ -53,11 +53,9 @@ class SoundViewModel @Inject constructor(
 
     fun playCorrectGuess() = playIfEnabled { playCorrectGuessSound() }
     fun playIncorrectGuess() = playIfEnabled { playIncorrectGuessSound() }
-    fun playWinSound() = playIfEnabled { playWinSound() }
-    fun playLoseSound() = playIfEnabled { playLoseSound() }
-    fun playButtonClick() = playIfEnabled { playButtonClickSound() }
-    // Hint sounds also go through the same sound-enabled gate
-    fun playHintSound() = playIfEnabled { playButtonClickSound() }
+    fun playGameOverSound() = playIfEnabled { playGameOverSound() }
+    fun playHintSound() = playIfEnabled { playHintSound() }
+    fun playLowLivesSound() = playIfEnabled { playLowLivesSound() }
 
     private inline fun playIfEnabled(crossinline block: suspend SoundPlayer.() -> Unit) {
         if (isSoundEnabled.value) viewModelScope.launch { soundPlayer.block() }

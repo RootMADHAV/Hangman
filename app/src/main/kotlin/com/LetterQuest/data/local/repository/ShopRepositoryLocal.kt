@@ -65,7 +65,27 @@ class ShopRepositoryLocal @Inject constructor(
         }
     }
 
+    override suspend fun hasMadeIAP(): Boolean {
+        return try {
+            dataStore.data.first()[MADE_IAP] ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun recordIAP(): Result<Unit> {
+        return try {
+            dataStore.edit { preferences ->
+                preferences[MADE_IAP] = true
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private companion object {
         val ACTIVE_PERKS = stringSetPreferencesKey("shop_active_perks")
+        val MADE_IAP = androidx.datastore.preferences.core.booleanPreferencesKey("made_iap")
     }
 }

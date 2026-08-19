@@ -3,7 +3,7 @@ package com.LetterQuest.domain.model
 /**
  * A purchasable in-game assist.
  *
- * Costs are balanced against [UserTokens.EARNED_PER_WIN]: a won game funds roughly one
+ * Costs are balanced against [UserTokens.EARNED_PER_CLASSIC_WIN]: a won game funds roughly one
  * reveal, so hints stay affordable without removing the challenge.
  */
 enum class HintType(val cost: Int, val displayName: String, val description: String) {

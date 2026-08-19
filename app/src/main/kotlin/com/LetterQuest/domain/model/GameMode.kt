@@ -40,8 +40,6 @@ enum class GameMode(val displayName: String, val description: String, val icon: 
         const val TIMED_HINT_COST_MULTIPLIER: Float = 0.5f
         /** Hint cost is never allowed to drop below this. */
         const val MIN_HINT_COST: Int = 1
-        /** Tokens earned per word solved in timed mode, paid when the clock hits zero. */
-        const val TOKENS_PER_TIMED_WORD: Int = 2
         /** Live score awarded per correct letter during a Timed Blitz session. */
         const val TIMED_POINTS_PER_CORRECT_LETTER: Int = 10
         /** Live score bonus awarded per completed word during a Timed Blitz session. */

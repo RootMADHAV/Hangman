@@ -16,10 +16,10 @@ enum class ChallengeMode {
 
     val description: String
         get() = when (this) {
-            CLASSIC -> "Play at your own pace"
-            TIMED -> "Complete within time limit"
-            LIMITED_GUESSES -> "Fewer attempts available"
-            CATEGORY_CHALLENGE -> "Guess from one category only"
+            CLASSIC -> "+4🪙 per win • +1🪙 per combo"
+            TIMED -> "+5🪙 per word • +1🪙 per combo"
+            LIMITED_GUESSES -> "+6🪙 per win"
+            CATEGORY_CHALLENGE -> "+4🪙 per win • +1🪙 per combo"
         }
 
     val icon: String

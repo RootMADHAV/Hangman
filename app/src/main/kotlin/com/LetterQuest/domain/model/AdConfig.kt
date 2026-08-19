@@ -22,10 +22,13 @@ object AdConfig {
 
     // Rewarded: watch ad earn coins — official rewarded test ad unit
     const val REWARDED_COINS = "ca-app-pub-3940256099942544/5224354917"
+
+    // Rewarded: daily challenge retry — official rewarded test ad unit
+    const val REWARDED_DAILY_RETRY = "ca-app-pub-3940256099942544/5224354917"
 }
 
 enum class RewardType {
-    HINT, COINS
+    HINT, COINS, DAILY_RETRY
 }
 
 data class InAppPurchase(

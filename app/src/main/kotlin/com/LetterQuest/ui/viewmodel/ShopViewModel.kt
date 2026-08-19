@@ -135,6 +135,7 @@ class ShopViewModel @Inject constructor(
     fun purchaseCoinBundle(bundle: CoinBundle) {
         viewModelScope.launch {
             tokenRepository.earnTokens(bundle.tokens)
+            shopRepository.recordIAP()
             _purchaseMessage.value = "${bundle.icon} ${bundle.label}: +${bundle.tokens} 🪙 added!"
         }
     }
@@ -144,6 +145,7 @@ class ShopViewModel @Inject constructor(
         viewModelScope.launch {
             adManager.setAdsRemoved(true)
             preferencesRepository.setAdsRemoved(true)
+            shopRepository.recordIAP()
             _purchaseMessage.value = "🎉 Remove Ads purchased! Ads are now disabled."
         }
     }

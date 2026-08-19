@@ -46,6 +46,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -88,10 +89,12 @@ fun ProfileScreen(
     }
 
     if (showEditDialog) {
-        editNickname = profileState.nickname
-        editUsername = profileState.username
-        editAvatarId = AvatarCatalog.avatars.indexOfFirst { it.id == profileState.avatarId }.coerceAtLeast(0)
-        usernameError = null
+        LaunchedEffect(showEditDialog) {
+            editNickname = profileState.nickname
+            editUsername = profileState.username
+            editAvatarId = AvatarCatalog.avatars.indexOfFirst { it.id == profileState.avatarId }.coerceAtLeast(0)
+            usernameError = null
+        }
 
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showEditDialog = false },
@@ -451,6 +454,10 @@ fun ProfileScreen(
                 TextButton(onClick = {
                     authViewModel.signOut()
                     showSignOutDialog = false
+                    navController.navigate(NavigationRoute.Auth.route) {
+                        popUpTo(NavigationRoute.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }) {
                     Text("Sign Out", color = Color(0xFFB71C1C))
                 }

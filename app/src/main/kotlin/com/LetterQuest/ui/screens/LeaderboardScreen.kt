@@ -29,8 +29,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -46,29 +47,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.LetterQuest.data.repository.WordCatalog
-import com.LetterQuest.domain.model.ChallengeMode
-import com.LetterQuest.domain.model.Difficulty
-import com.LetterQuest.domain.model.LeaderboardFilterConfig
-import com.LetterQuest.domain.model.LeaderboardSortBy
-import com.LetterQuest.domain.model.LeaderboardTimeFilter
-import com.LetterQuest.domain.model.WordCategory
+import com.LetterQuest.domain.model.GlobalLeaderboardEntry
+import com.LetterQuest.domain.model.LeaderboardMetric
 import com.LetterQuest.ui.components.BannerAd
+import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.LeaderboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(
     navController: NavHostController,
+    adViewModel: AdViewModel = hiltViewModel(),
     viewModel: LeaderboardViewModel = hiltViewModel()
 ) {
-    val leaderboard = viewModel.leaderboard.collectAsState().value
-    val filterConfig by viewModel.filterConfig.collectAsState()
-
-    var expandedTime by remember { mutableStateOf(false) }
-    var expandedSort by remember { mutableStateOf(false) }
-    var expandedCategory by remember { mutableStateOf(false) }
-    var expandedDifficulty by remember { mutableStateOf(false) }
+    val leaderboard by viewModel.leaderboard.collectAsState()
+    val currentUserEntry by viewModel.currentUserEntry.collectAsState()
+    val selectedMetric by viewModel.selectedMetric.collectAsState()
+    val adState = adViewModel.adState.collectAsState().value
 
     Scaffold(
         topBar = {
@@ -81,166 +76,22 @@ fun LeaderboardScreen(
                 }
             )
         },
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Sort filter
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            TabRow(
+                selectedTabIndex = LeaderboardMetric.entries.indexOf(selectedMetric)
             ) {
-                ExposedDropdownMenuBox(
-                    expanded = expandedSort,
-                    onExpandedChange = { expandedSort = !expandedSort },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedButton(
-                        onClick = { expandedSort = !expandedSort },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    ) {
-                        Text("${filterConfig.sortBy.displayName} ▾")
-                    }
-                    ExposedDropdownMenu(
-                        expanded = expandedSort,
-                        onDismissRequest = { expandedSort = false }
-                    ) {
-                        LeaderboardSortBy.entries.forEach { sort ->
-                            DropdownMenuItem(
-                                text = { Text(sort.displayName) },
-                                onClick = {
-                                    viewModel.setFilter(filterConfig.copy(sortBy = sort))
-                                    expandedSort = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                ExposedDropdownMenuBox(
-                    expanded = expandedTime,
-                    onExpandedChange = { expandedTime = !expandedTime },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedButton(
-                        onClick = { expandedTime = !expandedTime },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    ) {
-                        Text("${filterConfig.timeFilter.displayName} ▾")
-                    }
-                    ExposedDropdownMenu(
-                        expanded = expandedTime,
-                        onDismissRequest = { expandedTime = false }
-                    ) {
-                        LeaderboardTimeFilter.entries.forEach { time ->
-                            DropdownMenuItem(
-                                text = { Text(time.displayName) },
-                                onClick = {
-                                    viewModel.setFilter(filterConfig.copy(timeFilter = time))
-                                    expandedTime = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Category and Difficulty filters
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ExposedDropdownMenuBox(
-                    expanded = expandedCategory,
-                    onExpandedChange = { expandedCategory = !expandedCategory },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedButton(
-                        onClick = { expandedCategory = !expandedCategory },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    ) {
-                        Text(
-                            text = filterConfig.selectedCategory?.let { catId ->
-                                WordCatalog.categories.find { it.id == catId }?.name ?: "All Categories"
-                            } ?: "All Categories",
-                            maxLines = 1
-                        )
-                        Text(" ▾", modifier = Modifier.padding(start = 4.dp))
-                    }
-                    ExposedDropdownMenu(
-                        expanded = expandedCategory,
-                        onDismissRequest = { expandedCategory = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("All Categories") },
-                            onClick = {
-                                viewModel.setFilter(filterConfig.copy(selectedCategory = WordCategory.ALL_CATEGORIES_ID))
-                                expandedCategory = false
-                            }
-                        )
-                        WordCatalog.categories.forEach { category ->
-                            DropdownMenuItem(
-                                text = { Text("${category.icon} ${category.name}") },
-                                onClick = {
-                                    viewModel.setFilter(filterConfig.copy(selectedCategory = category.id))
-                                    expandedCategory = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                ExposedDropdownMenuBox(
-                    expanded = expandedDifficulty,
-                    onExpandedChange = { expandedDifficulty = !expandedDifficulty },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedButton(
-                        onClick = { expandedDifficulty = !expandedDifficulty },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    ) {
-                        Text(
-                            text = filterConfig.difficultyFilter?.name ?: "All Difficulties",
-                            maxLines = 1
-                        )
-                        Text(" ▾", modifier = Modifier.padding(start = 4.dp))
-                    }
-                    ExposedDropdownMenu(
-                        expanded = expandedDifficulty,
-                        onDismissRequest = { expandedDifficulty = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("All Difficulties") },
-                            onClick = {
-                                viewModel.setFilter(filterConfig.copy(difficultyFilter = null))
-                                expandedDifficulty = false
-                            }
-                        )
-                        Difficulty.entries.forEach { diff ->
-                            DropdownMenuItem(
-                                text = { Text(diff.name) },
-                                onClick = {
-                                    viewModel.setFilter(filterConfig.copy(difficultyFilter = diff))
-                                    expandedDifficulty = false
-                                }
-                            )
-                        }
-                    }
+                LeaderboardMetric.entries.forEach { metric ->
+                    Tab(
+                        selected = selectedMetric == metric,
+                        onClick = { viewModel.setMetric(metric) },
+                        text = { Text(metric.title) }
+                    )
                 }
             }
 
@@ -253,7 +104,7 @@ fun LeaderboardScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No games match this filter", fontSize = 16.sp)
+                    Text("No scores yet", fontSize = 16.sp)
                 }
             } else {
                 LazyColumn(
@@ -265,13 +116,40 @@ fun LeaderboardScreen(
                     itemsIndexed(leaderboard) { index, entry ->
                         LeaderboardCard(
                             rank = index + 1,
-                            word = entry.word,
-                            difficulty = entry.difficulty.name,
-                            score = entry.score,
-                            elapsedSeconds = entry.elapsedSeconds,
-                            category = entry.category ?: ""
+                            entry = entry,
+                            isCurrentUser = entry.userId == currentUserEntry?.userId
                         )
                         Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+
+            currentUserEntry?.let { entry ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "👤 Your Rank: #${entry.rank}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = entry.displayValue,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 }
             }
@@ -282,11 +160,8 @@ fun LeaderboardScreen(
 @Composable
 fun LeaderboardCard(
     rank: Int,
-    word: String,
-    difficulty: String,
-    score: Int,
-    elapsedSeconds: Long,
-    category: String = ""
+    entry: GlobalLeaderboardEntry,
+    isCurrentUser: Boolean = false
 ) {
     val medalEmoji = when (rank) {
         1 -> "🥇"
@@ -295,10 +170,11 @@ fun LeaderboardCard(
         else -> "•"
     }
 
-    val backgroundColor = when (rank) {
-        1 -> MaterialTheme.colorScheme.primaryContainer
-        2 -> MaterialTheme.colorScheme.surfaceVariant
-        3 -> MaterialTheme.colorScheme.secondaryContainer
+    val backgroundColor = when {
+        isCurrentUser -> MaterialTheme.colorScheme.primaryContainer
+        rank == 1 -> MaterialTheme.colorScheme.primaryContainer
+        rank == 2 -> MaterialTheme.colorScheme.surfaceVariant
+        rank == 3 -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.surface
     }
 
@@ -322,13 +198,13 @@ fun LeaderboardCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = word.uppercase(),
+                    text = entry.nickname.uppercase(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "$difficulty${if (category.isNotBlank()) " • $category" else ""}",
+                    text = "@${entry.username}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -336,13 +212,13 @@ fun LeaderboardCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "$score pts",
+                    text = entry.displayValue,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "${elapsedSeconds}s",
+                    text = "${entry.gamesWon}W / ${entry.gamesPlayed}G",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

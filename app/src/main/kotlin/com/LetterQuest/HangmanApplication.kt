@@ -7,7 +7,9 @@ import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
 import com.LetterQuest.domain.repository.AchievementRepository
+import com.LetterQuest.domain.repository.CloudSyncRepository
 import com.LetterQuest.domain.repository.DailyLoginRepository
+import com.LetterQuest.domain.usecase.CloudSyncUseCase
 import com.LetterQuest.ui.notification.DailyRewardNotification
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +28,9 @@ class HangmanApplication : Application() {
     @Inject
     lateinit var dailyLoginRepository: DailyLoginRepository
 
+    @Inject
+    lateinit var cloudSyncUseCase: CloudSyncUseCase
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
@@ -39,6 +44,9 @@ class HangmanApplication : Application() {
         applicationScope.launch {
             scheduleDailyRewardNotificationIfNeeded(this@HangmanApplication)
         }
+        applicationScope.launch {
+            trySync()
+        }
     }
 
     private fun initFirebase() {
@@ -46,15 +54,9 @@ class HangmanApplication : Application() {
             Firebase.analytics.setAnalyticsCollectionEnabled(true)
             Firebase.crashlytics.setCrashlyticsCollectionEnabled(true)
         } catch (_: Exception) {
-            // Fails gracefully when google-services.json contains placeholder values.
-            // Replace the file with your real Firebase project config to activate.
         }
     }
 
-    /**
-     * Called from MainActivity after UMP consent is confirmed. MobileAds must
-     * not be initialized before consent in regions where it is required (EEA).
-     */
     fun initMobileAds() {
         MobileAds.initialize(this)
     }
@@ -67,6 +69,24 @@ class HangmanApplication : Application() {
             }
         } catch (e: Exception) {
             android.util.Log.w("HangmanApplication", "Failed to schedule daily reward notification", e)
+        }
+    }
+
+    private suspend fun trySync() {
+        try {
+            cloudSyncUseCase.syncAll()
+        } catch (e: Exception) {
+            android.util.Log.w("HangmanApplication", "Initial sync failed", e)
+        }
+    }
+
+    fun syncNow() {
+        applicationScope.launch {
+            try {
+                cloudSyncUseCase.syncAll()
+            } catch (e: Exception) {
+                android.util.Log.w("HangmanApplication", "Manual sync failed", e)
+            }
         }
     }
 }

@@ -54,6 +54,7 @@ import com.LetterQuest.domain.model.RewardType
 import com.LetterQuest.ui.components.BannerAd
 import com.LetterQuest.ui.components.RemoveAdsPurchaseCard
 import com.LetterQuest.ui.components.RewardedAdCard
+import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.CoinBundle
 import com.LetterQuest.ui.viewmodel.RewardedAdViewModel
 import com.LetterQuest.ui.viewmodel.ShopEntry
@@ -64,6 +65,7 @@ import com.LetterQuest.util.findActivity
 fun ShopScreen(
     navController: NavHostController,
     viewModel: ShopViewModel = hiltViewModel(),
+    adViewModel: AdViewModel = hiltViewModel(),
     rewardedAdViewModel: RewardedAdViewModel = hiltViewModel()
 ) {
     val entries = viewModel.entries.collectAsState().value
@@ -71,9 +73,9 @@ fun ShopScreen(
     val message = viewModel.purchaseMessage.collectAsState().value
     val dailyLogin = viewModel.dailyLoginState.collectAsState().value
     val adsRemoved by rewardedAdViewModel.adsRemoved.collectAsState()
+    val adState = adViewModel.adState.collectAsState().value
 
     val context = LocalContext.current
-    // Pre-load the rewarded coins ad so tapping "Watch" can show immediately.
     LaunchedEffect(adsRemoved) {
         if (!adsRemoved) rewardedAdViewModel.loadRewardedAd(context, RewardType.COINS)
     }
@@ -97,7 +99,7 @@ fun ShopScreen(
                 }
             )
         },
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
         Surface(
             modifier = Modifier

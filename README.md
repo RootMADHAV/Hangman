@@ -11,7 +11,6 @@ Guess a hidden word by selecting letters before running out of attempts.
 - **5 difficulty levels** with progressive word complexity
 - **17+ word categories** (Animals, Movies, Books, Mythology, Geography, etc.)
 - **Dynamic hints system** using in-game token currency
-- **Win streaks** — auto-continue to next word without leaving gameplay
 - **Daily challenges** with persistent streak tracking
 
 ## ✨ Key Features
@@ -22,7 +21,7 @@ Guess a hidden word by selecting letters before running out of attempts.
 ✅ **Dynamic scoring** — based on difficulty, attempts, time  
 ✅ **Statistics tracking** — wins, losses, accuracy, category progress  
 ✅ **Word difficulty indicator** — shows difficulty level during gameplay  
-✅ **Famous Quotes category** — 18 multi-word phrases from movies & landmarks  
+✅ **Enhanced sound system** — 8 independent sound controls with toggles
 
 ### Challenge Modes
 🎮 **Classic Mode** — traditional hangman  
@@ -112,9 +111,9 @@ di/        → Hilt dependency injection
 
 ## 🎯 Word Catalog
 
-**~400+ words** across **17 categories:**
+**~1055+ words** across **17 categories:**
 
-🐾 Animals (32) · 🎬 Movies (22) · 📺 TV (11) · 📚 Books (12) · 🌍 Countries (16) · 🏙️ Cities (15) · ⚽ Sports (15) · 🍕 Foods (21) · 🎵 Music (14) · 🗼 Landmarks (10) · 🌿 Nature (15) · 🔬 Science (13) · 💻 Tech (13) · 👷 Professions (14) · 🚀 Space (19) · ⚡ Mythology (15) · 🗺️ Geography (11)
+🐾 Animals (73) · 🎬 Movies (74) · 📺 TV (70) · 📚 Books (75) · 🌍 Countries (73) · 🏙️ Cities (73) · ⚽ Sports (74) · 🍕 Foods (75) · 🎵 Music (73) · 🗼 Landmarks (74) · 🌿 Nature (73) · 🔬 Science (50) · 💻 Tech (50) · 👷 Professions (50) · 🚀 Space (51) · ⚡ Mythology (50) · 🗺️ Geography (50)
 
 ## 🛠️ Build & Run
 
@@ -160,7 +159,6 @@ Home → Setup (difficulty/category) → Play → Win (overlay continues) or Los
 
 ## 📋 Milestone 6 Updates (August 2026)
 
-✅ Famous Quotes & Landmarks category (18 multi-word phrases)  
 ✅ Category selection screen before gameplay  
 ✅ Challenge modes (Classic, Timed, Limited Guesses, Category Challenge)  
 ✅ Achievements system (10 unique milestones with token rewards)  

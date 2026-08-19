@@ -21,7 +21,7 @@ object AchievementCatalog {
             description = "Win your first game",
             icon = "🏆",
             condition = "games_won >= 1",
-            rewardTokens = 50
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "five_streak",
@@ -29,7 +29,7 @@ object AchievementCatalog {
             description = "Reach a 5-game winning streak",
             icon = "🔥",
             condition = "max_streak >= 5",
-            rewardTokens = 100
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "ten_streak",
@@ -37,7 +37,7 @@ object AchievementCatalog {
             description = "Reach a 10-game winning streak",
             icon = "⚡",
             condition = "max_streak >= 10",
-            rewardTokens = 200
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "perfect_accuracy",
@@ -45,15 +45,15 @@ object AchievementCatalog {
             description = "Win with no wrong guesses",
             icon = "✨",
             condition = "perfect_game",
-            rewardTokens = 150
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "fast_solve",
             name = "Speed Racer",
-            description = "Solve a word in under 30 seconds",
+            description = "Solve a word in under 5 seconds",
             icon = "🚀",
             condition = "fast_solve",
-            rewardTokens = 75
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "token_collector",
@@ -69,7 +69,7 @@ object AchievementCatalog {
             description = "Win 5 games in each category",
             icon = "👑",
             condition = "all_categories_5wins",
-            rewardTokens = 250
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "challenge_winner",
@@ -77,7 +77,7 @@ object AchievementCatalog {
             description = "Win a challenge mode game",
             icon = "🎯",
             condition = "challenge_win",
-            rewardTokens = 100
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "lucky_seven",
@@ -85,7 +85,7 @@ object AchievementCatalog {
             description = "Win exactly 7 games",
             icon = "🍀",
             condition = "games_won == 7",
-            rewardTokens = 50
+            rewardTokens = 10
         ),
         AchievementMilestone(
             id = "comeback_king",
@@ -93,7 +93,31 @@ object AchievementCatalog {
             description = "Win with only 1 wrong guess remaining",
             icon = "💪",
             condition = "comeback_win",
-            rewardTokens = 125
+            rewardTokens = 10
+        ),
+        AchievementMilestone(
+            id = "pesosking",
+            name = "Peso King",
+            description = "Accumulate 5000 tokens",
+            icon = "👑",
+            condition = "total_tokens >= 5000",
+            rewardTokens = 10
+        ),
+        AchievementMilestone(
+            id = "richman",
+            name = "Rich Man",
+            description = "Make an in-app purchase",
+            icon = "💎",
+            condition = "made_iap",
+            rewardTokens = 10
+        ),
+        AchievementMilestone(
+            id = "thronebreaker",
+            name = "Thronebreaker",
+            description = "Complete all daily challenges in a week",
+            icon = "🏰",
+            condition = "weekly_challenges_complete",
+            rewardTokens = 10
         )
     )
 

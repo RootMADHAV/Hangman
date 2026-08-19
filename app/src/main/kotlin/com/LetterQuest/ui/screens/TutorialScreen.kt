@@ -18,7 +18,7 @@ import com.LetterQuest.ui.navigation.NavigationRoute
 private data class TutorialPage(val emoji: String, val title: String, val body: String)
 
 private val PAGES = listOf(
-    TutorialPage("🎮", "Welcome to Hangman!", "Guess the hidden word one letter at a time before the hangman is complete."),
+    TutorialPage("🎮", "Welcome to Letter Quest!", "Guess the hidden word one letter at a time before the hangman is complete."),
     TutorialPage("🔤", "Guess Letters", "Tap any letter on the keyboard. Green means correct — it appears in the word. Red means wrong."),
     TutorialPage("💡", "Use Hints", "Stuck? Spend tokens on hints:\n• 💡 Show clue\n• 🔤 Reveal a letter\n• 🚫 Remove wrong letters\n• ⏭ Skip the word"),
     TutorialPage("🪙", "Earn Tokens", "Win a word → earn 3 tokens. Visit the Shop to buy more or grab your daily reward!"),

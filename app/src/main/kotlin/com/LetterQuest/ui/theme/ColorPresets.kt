@@ -119,7 +119,7 @@ object ColorPresets {
         id = "midnight_ocean",
         name = "Midnight Ocean",
         isDark = true,
-        cost = 200,
+        cost = 300,
         colors = createThemeColors(
             primary = Color(0xFF1A7EBD),
             onPrimary = Color(0xFFFFFFFF),
@@ -149,7 +149,7 @@ object ColorPresets {
         id = "sunset_fire",
         name = "Sunset Fire",
         isDark = true,
-        cost = 200,
+        cost = 300,
         colors = createThemeColors(
             primary = Color(0xFFE05C00),
             onPrimary = Color(0xFFFFFFFF),
@@ -179,7 +179,7 @@ object ColorPresets {
         id = "cotton_candy",
         name = "Cotton Candy",
         isDark = false,
-        cost = 300,
+        cost = 400,
         colors = createThemeColors(
             primary = Color(0xFFD63FAB),
             onPrimary = Color(0xFFFFFFFF),
@@ -209,7 +209,7 @@ object ColorPresets {
         id = "neon_pulse",
         name = "Neon Pulse",
         isDark = true,
-        cost = 400,
+        cost = 500,
         colors = createThemeColors(
             primary = Color(0xFF39FF14),
             onPrimary = Color(0xFF000000),
@@ -235,9 +235,39 @@ object ColorPresets {
         )
     )
 
+    val arcticIcePreset = ThemePreset(
+        id = "arctic_ice",
+        name = "Arctic Ice",
+        isDark = false,
+        cost = 600,
+        colors = createThemeColors(
+            primary = Color(0xFF00ACC1),
+            onPrimary = Color(0xFFFFFFFF),
+            primaryContainer = Color(0xFFB3EBF5),
+            onPrimaryContainer = Color(0xFF00363D),
+            secondary = Color(0xFF00838F),
+            onSecondary = Color(0xFFFFFFFF),
+            secondaryContainer = Color(0xFFB2EBF2),
+            onSecondaryContainer = Color(0xFF00363D),
+            tertiary = Color(0xFF4DD0E1),
+            onTertiary = Color(0xFF000000),
+            tertiaryContainer = Color(0xFFE0F7FA),
+            onTertiaryContainer = Color(0xFF003636),
+            error = Color(0xFFD32F2F),
+            onError = Color(0xFFFFFFFF),
+            errorContainer = Color(0xFFFFDAD7),
+            onErrorContainer = Color(0xFF3B0007),
+            background = Color(0xFFE0F7FA),
+            onBackground = Color(0xFF003636),
+            surface = Color(0xFFFFFFFF),
+            onSurface = Color(0xFF003636),
+            outline = Color(0xFF80DEEA)
+        )
+    )
+
     val allPresets = listOf(lightPreset, darkPreset,
         midnightOceanPreset, sunsetFirePreset,
-        cottonCandyPreset, neonPulsePreset)
+        cottonCandyPreset, neonPulsePreset, arcticIcePreset)
 
     /** IDs of themes that are always free. */
     val FREE_THEME_IDS = setOf("light", "dark")

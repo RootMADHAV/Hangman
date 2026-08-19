@@ -60,7 +60,7 @@ fun AboutScreen(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Hangman",
+                "Letter Quest",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -106,20 +106,20 @@ fun AboutScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
-                    val shareText = "Download Hangman and challenge your vocabulary! " +
+                    val shareText = "Download Letter Quest and challenge your vocabulary! " +
                         "https://play.google.com/store/apps/details?id=${context.packageName}"
                     val sendIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     }
-                    context.startActivity(Intent.createChooser(sendIntent, "Share Hangman"))
+                    context.startActivity(Intent.createChooser(sendIntent, "Share Letter Quest"))
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Share App") }
 
             Spacer(modifier = Modifier.height(32.dp))
             Text(
-                "\u00A9 2026 Hangman Game",
+                "\u00A9 2026 Letter Quest Game",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

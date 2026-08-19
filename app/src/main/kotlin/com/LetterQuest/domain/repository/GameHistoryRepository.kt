@@ -15,4 +15,5 @@ interface GameHistoryRepository {
     suspend fun getMaxWinStreak(): Result<Int>
     suspend fun getGameCount(): Result<Int>
     suspend fun deleteAll(): Result<Unit>
+    suspend fun syncGames(games: List<GameHistoryEntry>): Result<Unit>
 }

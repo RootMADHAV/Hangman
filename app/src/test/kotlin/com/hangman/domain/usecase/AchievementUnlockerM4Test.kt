@@ -12,6 +12,7 @@ import com.LetterQuest.domain.model.Word
 import com.LetterQuest.domain.repository.AchievementRepository
 import com.LetterQuest.domain.repository.DailyChallengeRepository
 import com.LetterQuest.domain.repository.GameHistoryRepository
+import com.LetterQuest.domain.repository.ShopRepository
 import com.LetterQuest.domain.repository.StatisticsRepository
 import com.LetterQuest.domain.repository.TokenRepository
 import kotlinx.coroutines.flow.Flow
@@ -37,7 +38,8 @@ class AchievementUnlockerM4Test {
             mockAchievementRepository,
             mockGameHistoryRepository,
             MockTokenRepository(),
-            MockDailyChallengeRepository()
+            MockDailyChallengeRepository(),
+            MockShopRepository()
         )
     }
 
@@ -64,7 +66,7 @@ class AchievementUnlockerM4Test {
         val gameStatus = GameStatus(
             word = word,
             gameStartTime = startTime,
-            gameEndTime = startTime + 20000, // 20 seconds
+            gameEndTime = startTime + 3000, // 3 seconds
             state = GameState.WON,
             guessedLetters = setOf('T', 'E', 'S')
         )
@@ -82,7 +84,7 @@ class AchievementUnlockerM4Test {
         val gameStatus = GameStatus(
             word = word,
             gameStartTime = startTime,
-            gameEndTime = startTime + 40000, // 40 seconds
+            gameEndTime = startTime + 10000, // 10 seconds
             state = GameState.WON,
             guessedLetters = setOf('T', 'E', 'S')
         )
@@ -140,6 +142,8 @@ class AchievementUnlockerM4Test {
         override suspend fun getUnlockedAchievements(): Result<List<Achievement>> = Result.success(emptyList())
         override suspend fun resetAchievements(): Result<Unit> = Result.success(Unit)
         override suspend fun syncAchievementCatalog(): Result<Unit> = Result.success(Unit)
+        override suspend fun syncAchievements(achievements: List<Achievement>): Result<Unit> =
+            Result.success(Unit)
     }
 
     private class MockGameHistoryRepository : GameHistoryRepository {
@@ -166,6 +170,8 @@ class AchievementUnlockerM4Test {
         override suspend fun getMaxWinStreak(): Result<Int> = Result.success(maxWinStreak)
         override suspend fun getGameCount(): Result<Int> = Result.success(0)
         override suspend fun deleteAll(): Result<Unit> = Result.success(Unit)
+        override suspend fun syncGames(games: List<com.LetterQuest.domain.model.GameHistoryEntry>): Result<Unit> =
+            Result.success(Unit)
     }
 
     private class StatisticsRepositoryMock : StatisticsRepository {
@@ -180,5 +186,20 @@ class AchievementUnlockerM4Test {
             Result.success(Unit)
 
         override suspend fun resetStatistics(): Result<Unit> = Result.success(Unit)
+    }
+
+    private class MockShopRepository : ShopRepository {
+        private var madeIAP = false
+        override fun observeOwnedItems(): Flow<Set<com.LetterQuest.domain.model.ShopItem>> = emptyFlow()
+        override suspend fun getOwnedItems(): Result<Set<com.LetterQuest.domain.model.ShopItem>> =
+            Result.success(emptySet())
+        override suspend fun markPurchased(item: com.LetterQuest.domain.model.ShopItem): Result<Unit> =
+            Result.success(Unit)
+        override suspend fun clearActivatedPerks(): Result<Unit> = Result.success(Unit)
+        override suspend fun hasMadeIAP(): Boolean = madeIAP
+        override suspend fun recordIAP(): Result<Unit> {
+            madeIAP = true
+            return Result.success(Unit)
+        }
     }
 }

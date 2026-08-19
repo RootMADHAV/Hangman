@@ -131,13 +131,13 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {
-                    val shareText = "Download Hangman and challenge your vocabulary! " +
+                    val shareText = "Download Letter Quest and challenge your vocabulary! " +
                         "https://play.google.com/store/apps/details?id=${context.packageName}"
                     val sendIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     }
-                    context.startActivity(Intent.createChooser(sendIntent, "Share Hangman"))
+                    context.startActivity(Intent.createChooser(sendIntent, "Share Letter Quest"))
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Share App") }

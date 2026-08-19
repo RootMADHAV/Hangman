@@ -551,7 +551,6 @@ fun GameplayScreen(
                     guessedLetters = gameStatus.guessedLetters,
                     incorrectLetters = gameStatus.incorrectGuesses,
                     onLetterClick = { letter ->
-                        soundViewModel.playButtonClick()
                         gameViewModel.guessLetter(letter)
                     }
                 )
@@ -815,10 +814,19 @@ fun GameplayScreen(
 private fun DailyChallengeResultScreen(
     navController: NavHostController,
     gameViewModel: GameViewModel,
-    adViewModel: AdViewModel = hiltViewModel()
+    adViewModel: AdViewModel = hiltViewModel(),
+    rewardedAdViewModel: RewardedAdViewModel = hiltViewModel()
 ) {
     val adState = adViewModel.adState.collectAsState().value
     val context = LocalContext.current
+    val adRetryAvailable by gameViewModel.dailyAdRetryAvailable.collectAsState()
+    val adsRemoved by rewardedAdViewModel.adsRemoved.collectAsState()
+
+    LaunchedEffect(adRetryAvailable, adsRemoved) {
+        if (adRetryAvailable && !adsRemoved) {
+            rewardedAdViewModel.loadRewardedAd(context, RewardType.DAILY_RETRY)
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -835,30 +843,47 @@ private fun DailyChallengeResultScreen(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Watch an ad to try again!",
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = {
-                    val activity = context.findActivity()
-                    if (activity != null) {
-                        adViewModel.showInterstitialAd(activity) {
-                            gameViewModel.initializeDailyChallenge()
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary
+            if (adRetryAvailable) {
+                Text(
+                    "Watch an ad to try again!",
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
-            ) {
-                Text("📺 Watch Ad & Retry", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            } else {
+                Text(
+                    "Better luck tomorrow!",
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+            if (adRetryAvailable) {
+                Button(
+                    onClick = {
+                        val activity = context.findActivity()
+                        if (activity != null) {
+                            val shown = rewardedAdViewModel.showRewardedAd(
+                                RewardType.DAILY_RETRY, activity, context
+                            ) {
+                                gameViewModel.useDailyAdRetry()
+                                gameViewModel.initializeDailyChallenge()
+                            }
+                            if (!shown) {
+                                rewardedAdViewModel.loadRewardedAd(context, RewardType.DAILY_RETRY)
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("📺 Watch Ad & Retry", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
             OutlinedButton(
                 onClick = {
                     gameViewModel.resetGame()
@@ -1091,7 +1116,7 @@ private fun TimerChip(secondsLeft: Long, wordsSolved: Int) {
 
 /**
  * Final overlay for a timed session: shows how many words were solved and the
- * coin payout (+2🪙 per word), then offers Play Again or Home.
+ * coin payout, then offers Play Again or Home.
  */
 @Composable
 private fun TimedSessionSummary(
@@ -1100,7 +1125,7 @@ private fun TimedSessionSummary(
     uiState: com.LetterQuest.ui.viewmodel.GameUIState
 ) {
     val wordsSolved = uiState.timedWordsSolved
-    val payout = wordsSolved * GameMode.TOKENS_PER_TIMED_WORD
+    val payout = uiState.tokensEarnedThisGame
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(

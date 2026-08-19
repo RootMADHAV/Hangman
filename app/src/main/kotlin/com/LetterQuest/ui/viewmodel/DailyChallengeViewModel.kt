@@ -16,6 +16,8 @@ import javax.inject.Inject
 data class DailyChallengeUIState(
     val isCompleted: Boolean = false,
     val wasWon: Boolean = false,
+    val hasAttempted: Boolean = false,
+    val adRetryAvailable: Boolean = false,
     val hintText: String? = null,
     val isLoading: Boolean = true
 )
@@ -46,8 +48,8 @@ class DailyChallengeViewModel @Inject constructor(
                     _uiState.value = DailyChallengeUIState(
                         isCompleted = challenge.isCompleted,
                         wasWon = challenge.wasWon,
-                        // The word itself is never surfaced — only its hint, so the
-                        // puzzle is not spoiled before play.
+                        hasAttempted = challenge.hasAttempted,
+                        adRetryAvailable = challenge.adRetryAvailable,
                         hintText = challenge.word.hint,
                         isLoading = false
                     )

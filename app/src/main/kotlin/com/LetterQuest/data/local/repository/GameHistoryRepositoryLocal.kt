@@ -116,4 +116,16 @@ class GameHistoryRepositoryLocal @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override suspend fun syncGames(games: List<GameHistoryEntry>): Result<Unit> {
+        return try {
+            gameHistoryDao.deleteAll()
+            for (game in games) {
+                gameHistoryDao.insertGame(GameHistoryEntity.fromGameHistoryEntry(game))
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

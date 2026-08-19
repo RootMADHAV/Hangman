@@ -73,5 +73,7 @@ class AchievementNotificationServiceTest {
 
         override suspend fun resetAchievements(): Result<Unit> = Result.success(Unit)
         override suspend fun syncAchievementCatalog(): Result<Unit> = Result.success(Unit)
+        override suspend fun syncAchievements(achievements: List<Achievement>): Result<Unit> =
+            Result.success(Unit)
     }
 }

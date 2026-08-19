@@ -98,17 +98,13 @@ fun GameResultsScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        soundViewModel.playLoseSound()
-    }
-
     // Every loss shows the continue-ad dialog exactly once per results visit.
     LaunchedEffect(isWin, adsRemoved) {
         if (!isWin && !adsRemoved) showContinueDialog = true
     }
 
     Scaffold(
-        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth()) }
+        bottomBar = { BannerAd(modifier = Modifier.fillMaxWidth(), showAds = adState.showBannerAd) }
     ) { padding ->
     Surface(
         modifier = Modifier

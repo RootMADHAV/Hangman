@@ -117,7 +117,6 @@ fun DailyChallengeScreen(
                         Text("Loading today's puzzle...", fontSize = 15.sp)
                     }
 
-                    // Only block replay if player already WON today
                     uiState.isCompleted && uiState.wasWon -> {
                         Text(
                             "✅ Completed today",
@@ -133,10 +132,30 @@ fun DailyChallengeScreen(
                         )
                     }
 
-                    else -> {
+                    uiState.hasAttempted && !uiState.adRetryAvailable -> {
                         Text(
+                            "Better luck tomorrow!",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "A new puzzle arrives tomorrow.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    else -> {
+                        val rewardText = if (uiState.hasAttempted && uiState.adRetryAvailable) {
+                            "Watch an ad for a second chance, or try again tomorrow!"
+                        } else {
                             "Win to earn a 🪙 ${DailyChallenge.COMPLETION_BONUS_TOKENS} bonus " +
-                                "and extend your streak.",
+                                "and extend your streak."
+                        }
+                        Text(
+                            rewardText,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 16.dp)
@@ -149,7 +168,14 @@ fun DailyChallengeScreen(
                                 .fillMaxWidth()
                                 .height(52.dp)
                         ) {
-                            Text("Play Today's Puzzle", fontSize = 16.sp)
+                            Text(
+                                if (uiState.hasAttempted && uiState.adRetryAvailable) {
+                                    "📺 Watch Ad & Retry"
+                                } else {
+                                    "Play Today's Puzzle"
+                                },
+                                fontSize = 16.sp
+                            )
                         }
                     }
                 }

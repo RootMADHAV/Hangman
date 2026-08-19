@@ -121,7 +121,7 @@ fun AuthScreen(
             Text("🎮", fontSize = 48.sp)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Welcome to Hangman",
+                "Welcome to Letter Quest",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -206,7 +206,7 @@ fun AuthScreen(
                     shape = RoundedCornerShape(12.dp),
                     enabled = !uiState.isLoading && uiState.authState !is AuthState.Authenticated
                 ) {
-                    Text("🔵 Continue with Google", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text("🔑 Continue with Google", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

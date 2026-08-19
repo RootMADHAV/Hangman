@@ -21,15 +21,19 @@ value class UserTokens(val balance: Int) {
 
         /** Awarded only when a word is actually guessed (not during mid-game individual letters).
          *  +1 per correct letter in the word, so longer words pay more — roughly 3 for typical
-         *  simple words, matching the user's "+3 per word" spec. */
+          simple words. */
         fun earnedPerWord(letters: Int): Int = letters.coerceAtLeast(1)
 
         /** Extra +1 per row of consecutive correct guesses inside one word (combo). */
         const val COMBO_STEP_TOKENS = 1
 
-        /** Awarded on any win (classic wins, daily wins, timed wins). */
-        const val EARNED_PER_WIN = 25
-        /** Consolation award so losing never feels like a total dead-end. */
-        const val EARNED_PER_LOSS = 5
+        /** Base flat reward for a win in Classic / Category Challenge mode. */
+        const val EARNED_PER_CLASSIC_WIN = 4
+        /** Base flat reward for a win in Timed Blitz mode (per word). */
+        const val EARNED_PER_TIMED_WORD = 5
+        /** Base flat reward for a win in Limited Guesses mode. */
+        const val EARNED_PER_LIMITED_WIN = 6
+        /** Max total reward for completing the daily challenge. */
+        const val EARNED_PER_DAILY_WIN = 20
     }
 }

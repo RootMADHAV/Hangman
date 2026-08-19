@@ -123,6 +123,7 @@ class ProfileViewModelTest {
         override fun observeAchievements(): Flow<List<Achievement>> = achievementsFlow.asStateFlow()
         override suspend fun resetAchievements() = Result.success(Unit)
         override suspend fun syncAchievementCatalog() = Result.success(Unit)
+        override suspend fun syncAchievements(achievements: List<Achievement>) = Result.success(Unit)
     }
 
     private class MockGameHistoryRepository : GameHistoryRepository {
@@ -137,6 +138,7 @@ class ProfileViewModelTest {
         override suspend fun getMaxWinStreak() = Result.success(0)
         override suspend fun getGameCount() = Result.success(0)
         override suspend fun deleteAll() = Result.success(Unit)
+        override suspend fun syncGames(games: List<GameHistoryEntry>) = Result.success(Unit)
     }
 
     private class MockAuthRepository : AuthRepository {
@@ -161,5 +163,6 @@ class ProfileViewModelTest {
         override suspend fun updateNickname(nickname: String) = AuthResult.Success
         override suspend fun updateUsername(username: String) = AuthResult.Success
         override suspend fun updateAvatar(avatarId: String) = AuthResult.Success
+        override suspend fun importProfile(profile: PlayerProfile) = AuthResult.Success
     }
 }

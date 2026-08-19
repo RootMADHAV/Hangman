@@ -1,11 +1,13 @@
 package com.LetterQuest.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.LetterQuest.domain.usecase.AdManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 import android.app.Activity
@@ -23,6 +25,14 @@ class AdViewModel @Inject constructor(
 
     private val _adState = MutableStateFlow(AdUIState())
     val adState: StateFlow<AdUIState> = _adState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            adManager.adsRemoved.collect { adsRemoved ->
+                _adState.value = _adState.value.copy(showBannerAd = !adsRemoved)
+            }
+        }
+    }
 
     fun showInterstitialAd(activity: Activity, onDismissed: () -> Unit = {}): Boolean {
         val shown = adManager.showInterstitialAd(activity) {
