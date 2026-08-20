@@ -92,6 +92,18 @@ class CloudSyncUseCase @Inject constructor(
 
     fun observeSyncStatus(): Flow<SyncStatus> = cloudSyncRepository.observeSyncStatus()
 
+    suspend fun enqueueLeaderboardScore(
+        metric: String,
+        value: Float,
+        gamesPlayed: Int,
+        gamesWon: Int,
+        username: String,
+        nickname: String,
+        avatarId: String
+    ) {
+        syncQueue.enqueueSubmitScore(metric, value, gamesPlayed, gamesWon, username, nickname, avatarId)
+    }
+
     private fun mergeGameHistory(local: List<GameHistoryEntry>, remote: List<GameHistoryEntry>): List<GameHistoryEntry> {
         val byUuid = mutableMapOf<String, GameHistoryEntry>()
         for (entry in local) {

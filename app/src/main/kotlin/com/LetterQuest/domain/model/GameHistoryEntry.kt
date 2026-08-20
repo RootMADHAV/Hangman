@@ -1,5 +1,6 @@
 package com.LetterQuest.domain.model
 
+import com.LetterQuest.domain.model.GameMode
 import java.util.UUID
 
 data class GameHistoryEntry(
@@ -15,7 +16,9 @@ data class GameHistoryEntry(
     val elapsedSeconds: Long,
     val playedAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val category: String? = null
+    val category: String? = null,
+    val hintsUsed: Int = 0,
+    val gameMode: String = GameMode.CLASSIC.name
 ) {
     val totalGuesses: Int
         get() = guessedLetters.size + incorrectGuesses.size

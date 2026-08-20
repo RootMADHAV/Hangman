@@ -5,6 +5,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.LetterQuest.domain.model.Difficulty
 import com.LetterQuest.domain.model.GameHistoryEntry
+import com.LetterQuest.domain.model.GameMode
 
 @Entity(tableName = "game_history", indices = [Index(value = ["uuid"], unique = true)])
 data class GameHistoryEntity(
@@ -20,7 +21,9 @@ data class GameHistoryEntity(
     val elapsedSeconds: Long,
     val playedAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val category: String? = null
+    val category: String? = null,
+    val hintsUsed: Int = 0,
+    val gameMode: String = GameMode.CLASSIC.name
 ) {
     fun toGameHistoryEntry(): GameHistoryEntry {
         return GameHistoryEntry(
@@ -36,7 +39,9 @@ data class GameHistoryEntity(
             elapsedSeconds = elapsedSeconds,
             playedAt = playedAt,
             updatedAt = updatedAt,
-            category = category
+            category = category,
+            hintsUsed = hintsUsed,
+            gameMode = gameMode
         )
     }
 
@@ -55,7 +60,9 @@ data class GameHistoryEntity(
                 elapsedSeconds = entry.elapsedSeconds,
                 playedAt = entry.playedAt,
                 updatedAt = entry.updatedAt,
-                category = entry.category
+                category = entry.category,
+                hintsUsed = entry.hintsUsed,
+                gameMode = entry.gameMode
             )
         }
     }

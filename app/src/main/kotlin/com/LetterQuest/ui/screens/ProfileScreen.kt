@@ -49,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -121,7 +123,7 @@ fun ProfileScreen(
                         isError = usernameError != null,
                         supportingText = {
                             if (usernameError != null) {
-                                Text(text = usernameError!!, color = MaterialTheme.colorScheme.error)
+                                Text(text = usernameError ?: "", color = MaterialTheme.colorScheme.error)
                             } else if (editUsername.isNotBlank()) {
                                 Text(
                                     text = "3-20 chars, letters, numbers, _, -",
@@ -173,7 +175,7 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text("Profile") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.semantics { contentDescription = "Navigate back" }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }

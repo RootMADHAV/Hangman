@@ -39,7 +39,7 @@ object DatabaseModule {
             context,
             HangmanDatabase::class.java,
             "hangman_database"
-        ).addMigrations(HangmanDatabase.MIGRATION_2_3, HangmanDatabase.MIGRATION_3_4, HangmanDatabase.MIGRATION_4_5)
+        ).addMigrations(HangmanDatabase.MIGRATION_2_3, HangmanDatabase.MIGRATION_3_4, HangmanDatabase.MIGRATION_4_5, HangmanDatabase.MIGRATION_5_6, HangmanDatabase.MIGRATION_6_7)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)

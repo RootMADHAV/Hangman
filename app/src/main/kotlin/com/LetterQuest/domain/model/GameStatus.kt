@@ -1,5 +1,7 @@
 package com.LetterQuest.domain.model
 
+import android.os.SystemClock
+
 data class GameStatus(
     val word: Word,
     val guessedLetters: Set<Char> = emptySet(),
@@ -7,7 +9,7 @@ data class GameStatus(
     val remainingAttempts: Int = word.difficulty.maxAttempts,
     val state: GameState = GameState.PLAYING,
     val score: Int = 0,
-    val gameStartTime: Long = System.currentTimeMillis(),
+    val gameStartTime: Long = SystemClock.elapsedRealtime(),
     val gameEndTime: Long? = null,
     val isPaused: Boolean = false,
     val pauseStartTime: Long? = null,
@@ -51,7 +53,7 @@ data class GameStatus(
 
     val elapsedMillis: Long
         get() {
-            val currentTime = gameEndTime ?: System.currentTimeMillis()
+            val currentTime = gameEndTime ?: SystemClock.elapsedRealtime()
             val currentPause = if (isPaused && pauseStartTime != null) currentTime - pauseStartTime else 0L
             return (currentTime - gameStartTime - totalPausedMillis - currentPause).coerceAtLeast(0L)
         }

@@ -146,6 +146,49 @@ class CloudSyncRepositoryImpl @Inject constructor(
         Result.failure(e)
     }
 
+    override suspend fun uploadLeaderboardScore(
+        metric: String,
+        value: Float,
+        gamesPlayed: Int,
+        gamesWon: Int,
+        username: String,
+        nickname: String,
+        avatarId: String
+    ): Result<Unit> = try {
+        val user = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
+        val docRef = firestore.collection("leaderboards")
+            .document(metric)
+            .collection("entries")
+            .document(user.uid)
+
+        firestore.runTransaction { transaction ->
+            val snapshot = transaction.get(docRef)
+            val currentValue = snapshot.getDouble("value")?.toFloat() ?: 0f
+            val currentGamesPlayed = snapshot.getLong("gamesPlayed")?.toInt() ?: 0
+            val currentGamesWon = snapshot.getLong("gamesWon")?.toInt() ?: 0
+
+            transaction.set(
+                docRef,
+                mapOf(
+                    "value" to (currentValue + value),
+                    "gamesPlayed" to (currentGamesPlayed + gamesPlayed),
+                    "gamesWon" to (currentGamesWon + gamesWon),
+                    "username" to username,
+                    "nickname" to nickname,
+                    "avatarId" to avatarId,
+                    "updatedAt" to System.currentTimeMillis()
+                ),
+                SetOptions.merge()
+            )
+        }.await()
+        updateStatus(isOnline = true, lastError = null)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e(TAG, "Upload leaderboard score failed", e)
+        updateStatus(isOnline = false, lastError = e.message)
+        Result.failure(e)
+    }
+
     override suspend fun uploadAchievements(achievements: List<Achievement>): Result<Unit> = try {
         val user = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
         val batch = firestore.batch()

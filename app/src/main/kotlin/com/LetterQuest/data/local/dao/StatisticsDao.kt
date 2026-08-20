@@ -22,7 +22,7 @@ interface StatisticsDao {
     @Update
     suspend fun update(statistics: StatisticsEntity)
 
-    @Query("UPDATE statistics SET gamesPlayed = gamesPlayed + 1, gamesWon = gamesWon + :won, gamesLost = gamesLost + :lost, totalScore = totalScore + :score, highestScore = MAX(highestScore, :score), averageScore = CAST(totalScore AS REAL) / gamesPlayed, winRate = CAST(gamesWon + :won AS REAL) / gamesPlayed WHERE id = 1")
+    @Query("UPDATE statistics SET gamesPlayed = gamesPlayed + 1, gamesWon = gamesWon + :won, gamesLost = gamesLost + :lost, totalScore = totalScore + :score, highestScore = MAX(highestScore, :score), averageScore = CAST(totalScore + :score AS REAL) / (gamesPlayed + 1), winRate = CAST(gamesWon + :won AS REAL) / (gamesPlayed + 1) WHERE id = 1")
     suspend fun atomicUpdate(won: Int, lost: Int, score: Int)
 
     @Query("DELETE FROM statistics")

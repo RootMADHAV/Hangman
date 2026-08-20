@@ -48,6 +48,7 @@ import com.LetterQuest.ui.viewmodel.DailyChallengeViewModel
 import com.LetterQuest.ui.viewmodel.GameViewModel
 import com.LetterQuest.ui.viewmodel.HomeViewModel
 import com.LetterQuest.ui.viewmodel.ShopViewModel
+import com.LetterQuest.ui.viewmodel.SoundViewModel
 
 @Composable
 fun HomeScreen(
@@ -56,7 +57,8 @@ fun HomeScreen(
     gameViewModel: GameViewModel = hiltViewModel(),
     dailyChallengeViewModel: DailyChallengeViewModel = hiltViewModel(),
     shopViewModel: ShopViewModel = hiltViewModel(),
-    homeViewModel: HomeViewModel = hiltViewModel()
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    soundViewModel: SoundViewModel = hiltViewModel()
 ) {
     val adState = adViewModel.adState.collectAsState().value
     val tokenBalance = gameViewModel.tokenBalance.collectAsState().value

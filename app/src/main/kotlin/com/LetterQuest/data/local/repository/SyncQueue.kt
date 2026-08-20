@@ -34,6 +34,18 @@ class SyncQueue @Inject constructor(
         enqueue(SyncOperation.UploadAchievements(achievements))
     }
 
+    suspend fun enqueueSubmitScore(
+        metric: String,
+        value: Float,
+        gamesPlayed: Int,
+        gamesWon: Int,
+        username: String,
+        nickname: String,
+        avatarId: String
+    ) {
+        enqueue(SyncOperation.SubmitScore(metric, value, gamesPlayed, gamesWon, username, nickname, avatarId))
+    }
+
     suspend fun drain() {
         val operations = getPendingOperations()
         if (operations.isEmpty()) return
@@ -49,6 +61,17 @@ class SyncQueue @Inject constructor(
                 }
                 is SyncOperation.UploadAchievements -> {
                     cloudSyncRepository.uploadAchievements(op.achievements).onFailure { lastError = it.message }
+                }
+                is SyncOperation.SubmitScore -> {
+                    cloudSyncRepository.uploadLeaderboardScore(
+                        metric = op.metric,
+                        value = op.value,
+                        gamesPlayed = op.gamesPlayed,
+                        gamesWon = op.gamesWon,
+                        username = op.username,
+                        nickname = op.nickname,
+                        avatarId = op.avatarId
+                    ).onFailure { lastError = it.message }
                 }
             }
         }
@@ -90,6 +113,7 @@ class SyncQueue @Inject constructor(
                     "upload_profile" -> SyncOperation.UploadProfile.fromJson(payload)?.let { result.add(it) }
                     "upload_history" -> SyncOperation.UploadGameHistory.fromJson(payload)?.let { result.add(it) }
                     "upload_achievements" -> SyncOperation.UploadAchievements.fromJson(payload)?.let { result.add(it) }
+                    "submit_score" -> SyncOperation.SubmitScore.fromJson(payload)?.let { result.add(it) }
                 }
             }
             result
@@ -228,6 +252,40 @@ sealed class SyncOperation {
                     )
                 }
                 UploadAchievements(achievements)
+            } catch (e: Exception) { null }
+        }
+    }
+
+    data class SubmitScore(
+        val metric: String,
+        val value: Float,
+        val gamesPlayed: Int,
+        val gamesWon: Int,
+        val username: String,
+        val nickname: String,
+        val avatarId: String
+    ) : SyncOperation() {
+        override val type = "submit_score"
+        override fun toJson(): JSONObject = JSONObject().apply {
+            put("metric", metric)
+            put("value", value)
+            put("gamesPlayed", gamesPlayed)
+            put("gamesWon", gamesWon)
+            put("username", username)
+            put("nickname", nickname)
+            put("avatarId", avatarId)
+        }
+        companion object {
+            fun fromJson(json: JSONObject): SubmitScore? = try {
+                SubmitScore(
+                    metric = json.getString("metric"),
+                    value = json.getDouble("value").toFloat(),
+                    gamesPlayed = json.getInt("gamesPlayed"),
+                    gamesWon = json.getInt("gamesWon"),
+                    username = json.getString("username"),
+                    nickname = json.getString("nickname"),
+                    avatarId = json.getString("avatarId")
+                )
             } catch (e: Exception) { null }
         }
     }

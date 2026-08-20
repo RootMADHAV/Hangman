@@ -15,6 +15,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,9 +30,11 @@ import com.LetterQuest.data.consent.ConsentManager
 import com.LetterQuest.domain.repository.PreferencesRepository
 import com.LetterQuest.domain.repository.AuthRepository
 import com.LetterQuest.domain.usecase.AdManager
+import com.LetterQuest.domain.usecase.MusicPlayer
 import com.LetterQuest.ui.navigation.NavGraph
 import com.LetterQuest.ui.navigation.NavigationRoute
 import com.LetterQuest.ui.theme.HangmanGameTheme
+import com.LetterQuest.ui.viewmodel.SoundViewModel
 import com.LetterQuest.ui.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -52,6 +55,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var authRepository: com.LetterQuest.domain.repository.AuthRepository
+
+    @Inject
+    lateinit var musicPlayer: com.LetterQuest.domain.usecase.MusicPlayer
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
@@ -127,6 +133,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        musicPlayer.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        musicPlayer.pause()
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -165,12 +181,24 @@ private fun MainApp(startDestination: String, showRatePrompt: Boolean) {
     val navController = rememberNavController()
     var showRateDialog by remember { mutableStateOf(showRatePrompt) }
 
+    LaunchedEffect(startDestination) {
+        if (startDestination != NavigationRoute.Auth.route) {
+            navController.navigate(startDestination) {
+                popUpTo(NavigationRoute.Auth.route) { inclusive = true }
+            }
+        }
+    }
+
+    // Create SoundViewModel at the app level so BGM starts immediately
+    // and keeps playing across all screens.
+    val soundViewModel: SoundViewModel = hiltViewModel()
+
     HangmanGameTheme(
         darkTheme = isDarkTheme,
         customColors = customColors,
         customIsDark = customIsDark
     ) {
-        NavGraph(navController, startDestination = startDestination)
+        NavGraph(navController, startDestination = NavigationRoute.Auth.route, soundViewModel = soundViewModel)
 
         if (showRateDialog) {
             AlertDialog(

@@ -54,7 +54,22 @@ class StatisticsRepositoryLocal @Inject constructor(
         return try {
             val wonInt = if (won) 1 else 0
             val lostInt = if (won) 0 else 1
-            statisticsDao.atomicUpdate(won = wonInt, lost = lostInt, score = score)
+            val existing = statisticsDao.getStatistics()
+            if (existing == null) {
+                statisticsDao.insertOrUpdate(
+                    StatisticsEntity(
+                        gamesPlayed = 1,
+                        gamesWon = wonInt,
+                        gamesLost = lostInt,
+                        totalScore = score,
+                        highestScore = score,
+                        averageScore = score.toFloat(),
+                        winRate = wonInt.toFloat()
+                    )
+                )
+            } else {
+                statisticsDao.atomicUpdate(won = wonInt, lost = lostInt, score = score)
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

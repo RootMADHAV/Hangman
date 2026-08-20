@@ -187,12 +187,12 @@ class GameHistoryRepositoryLocalTest {
             }
         }
 
-        override suspend fun upsertByUuid(uuid: String, word: String, difficulty: String, won: Boolean, score: Int, sessionScore: Int, guessedLetters: String, incorrectGuesses: String, elapsedSeconds: Long, playedAt: Long, updatedAt: Long, category: String?) {
+        override suspend fun upsertByUuid(uuid: String, word: String, difficulty: String, won: Boolean, score: Int, sessionScore: Int, guessedLetters: String, incorrectGuesses: String, elapsedSeconds: Long, playedAt: Long, updatedAt: Long, category: String?, hintsUsed: Int, gameMode: String) {
             val existing = games.find { it.uuid == uuid }
             games = if (existing != null) {
                 games.map { if (it.uuid == uuid) it.copy(score = score, sessionScore = sessionScore, updatedAt = updatedAt) else it }
             } else {
-                games + GameHistoryEntity(uuid = uuid, word = word, difficulty = difficulty, won = won, score = score, sessionScore = sessionScore, guessedLetters = guessedLetters, incorrectGuesses = incorrectGuesses, elapsedSeconds = elapsedSeconds, playedAt = playedAt, updatedAt = updatedAt, category = category)
+                games + GameHistoryEntity(uuid = uuid, word = word, difficulty = difficulty, won = won, score = score, sessionScore = sessionScore, guessedLetters = guessedLetters, incorrectGuesses = incorrectGuesses, elapsedSeconds = elapsedSeconds, playedAt = playedAt, updatedAt = updatedAt, category = category, hintsUsed = hintsUsed, gameMode = gameMode)
             }
         }
     }

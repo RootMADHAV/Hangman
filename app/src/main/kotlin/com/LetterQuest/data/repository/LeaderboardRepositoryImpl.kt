@@ -34,6 +34,7 @@ class LeaderboardRepositoryImpl @Inject constructor(
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         Log.e(TAG, "Leaderboard listener error", error)
+                        trySend(emptyList())
                         return@addSnapshotListener
                     }
                     val entries = snapshot?.documents?.mapIndexed { index, doc ->
@@ -72,6 +73,7 @@ class LeaderboardRepositoryImpl @Inject constructor(
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         Log.e(TAG, "Current user leaderboard listener error", error)
+                        trySend(null)
                         return@addSnapshotListener
                     }
                     val entry = snapshot?.let { doc ->

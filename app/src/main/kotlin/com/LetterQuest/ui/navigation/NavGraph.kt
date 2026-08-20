@@ -1,6 +1,7 @@
 package com.LetterQuest.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -26,15 +27,16 @@ import com.LetterQuest.ui.screens.StatisticsScreen
 import com.LetterQuest.ui.screens.TermsScreen
 import com.LetterQuest.ui.screens.ThemeCustomizationScreen
 import com.LetterQuest.ui.screens.TutorialScreen
+import com.LetterQuest.ui.viewmodel.SoundViewModel
 
 @Composable
-fun NavGraph(navController: NavHostController, startDestination: String = NavigationRoute.Home.route) {
+fun NavGraph(navController: NavHostController, startDestination: String = NavigationRoute.Home.route, soundViewModel: SoundViewModel = hiltViewModel()) {
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
         composable(NavigationRoute.Home.route) {
-            HomeScreen(navController)
+            HomeScreen(navController, soundViewModel = soundViewModel)
         }
         composable(NavigationRoute.GameSetup.route) {
             GameSetupScreen(navController)
@@ -58,7 +60,7 @@ fun NavGraph(navController: NavHostController, startDestination: String = Naviga
         ) {
             val difficulty = it.arguments?.getString("difficulty") ?: "MEDIUM"
             val category = it.arguments?.getString("category") ?: WordCategory.ALL_CATEGORIES_ID
-            GameplayScreen(navController, difficulty, category)
+            GameplayScreen(navController, difficulty, category, soundViewModel = soundViewModel)
         }
         composable(NavigationRoute.Statistics.route) {
             StatisticsScreen(navController)
@@ -88,7 +90,7 @@ fun NavGraph(navController: NavHostController, startDestination: String = Naviga
             DailyChallengeScreen(navController)
         }
         composable(NavigationRoute.DailyGameplay.route) {
-            GameplayScreen(navController, isDailyChallenge = true)
+            GameplayScreen(navController, isDailyChallenge = true, soundViewModel = soundViewModel)
         }
         composable(NavigationRoute.Shop.route) {
             ShopScreen(navController)

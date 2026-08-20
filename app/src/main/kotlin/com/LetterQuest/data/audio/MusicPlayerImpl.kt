@@ -57,7 +57,8 @@ class MusicPlayerImpl @Inject constructor(
     }
 
     override fun resume() {
-        if (wasPlayingBeforePause && player != null && !player!!.isPlaying) {
+        val playerInstance = player
+        if (wasPlayingBeforePause && playerInstance != null && !playerInstance.isPlaying) {
             try {
                 player?.start()
             } catch (_: Exception) {

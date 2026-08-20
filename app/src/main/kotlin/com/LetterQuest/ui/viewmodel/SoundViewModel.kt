@@ -57,6 +57,14 @@ class SoundViewModel @Inject constructor(
     fun playHintSound() = playIfEnabled { playHintSound() }
     fun playLowLivesSound() = playIfEnabled { playLowLivesSound() }
 
+    fun setMusicEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setMusicEnabled(enabled) }
+    }
+
+    fun setSoundEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setSoundEnabled(enabled) }
+    }
+
     private inline fun playIfEnabled(crossinline block: suspend SoundPlayer.() -> Unit) {
         if (isSoundEnabled.value) viewModelScope.launch { soundPlayer.block() }
     }

@@ -12,6 +12,15 @@ interface CloudSyncRepository {
     suspend fun downloadGameHistory(): Result<List<GameHistoryEntry>>
     suspend fun uploadAchievements(achievements: List<Achievement>): Result<Unit>
     suspend fun downloadAchievements(): Result<List<Achievement>>
+    suspend fun uploadLeaderboardScore(
+        metric: String,
+        value: Float,
+        gamesPlayed: Int,
+        gamesWon: Int,
+        username: String,
+        nickname: String,
+        avatarId: String
+    ): Result<Unit>
     suspend fun deleteProfile(): Result<Unit>
     suspend fun deleteGameHistory(): Result<Unit>
     suspend fun deleteAchievements(): Result<Unit>

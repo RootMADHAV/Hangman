@@ -40,9 +40,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,16 +56,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import com.LetterQuest.domain.model.ChallengeMode
 import com.LetterQuest.domain.model.Difficulty
@@ -123,6 +131,29 @@ fun GameplayScreen(
             )
         }
     }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                gameViewModel.pauseGame()
+            } else if (event == Lifecycle.Event.ON_START) {
+                gameViewModel.resumeGame()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val view = LocalView.current
+    LaunchedEffect(uiState.value.guessResult) {
+        when (uiState.value.guessResult) {
+            GuessResult.Correct -> view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+            GuessResult.Incorrect -> view.performHapticFeedback(android.view.HapticFeedbackConstants.REJECT)
+            else -> {}
+        }
+    }
+
     val gameStatus = uiState.value.gameStatus
     val guessResult = uiState.value.guessResult
     val error = uiState.value.error
@@ -223,7 +254,7 @@ fun GameplayScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.semantics { contentDescription = "Navigate back" }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
@@ -239,7 +270,8 @@ fun GameplayScreen(
                             if (gameStatus.isPaused) gameViewModel.resumeGame()
                             else gameViewModel.pauseGame()
                         },
-                        enabled = !gameStatus.isGameOver
+                        enabled = !gameStatus.isGameOver,
+                        modifier = Modifier.semantics { contentDescription = if (gameStatus.isPaused) "Resume game" else "Pause game" }
                     ) {
                         Text(if (gameStatus.isPaused) "▶" else "⏸", fontSize = 20.sp)
                     }
@@ -526,6 +558,7 @@ fun GameplayScreen(
                                 showHintAdDialog = true
                             } else {
                                 gameViewModel.useHint(hint)
+                                view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
                             }
                         }
                     )
@@ -547,32 +580,64 @@ fun GameplayScreen(
 
             // Pause overlay
             if (gameStatus.isPaused) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.7f)),
-                    contentAlignment = Alignment.Center
+                val isMusicEnabled by soundViewModel.isMusicEnabled.collectAsState()
+                val isSoundEnabled by soundViewModel.isSoundEnabled.collectAsState()
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(animationSpec = tween(200)),
+                    exit = fadeOut(animationSpec = tween(200))
                 ) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(0.8f),
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surface
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.7f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier.padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(0.8f),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface
                         ) {
-                            Text("⏸ Paused", fontSize = 28.sp, fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 24.dp))
-                            Button(
-                                onClick = { gameViewModel.resumeGame() },
-                                modifier = Modifier.fillMaxWidth().height(48.dp)
-                            ) { Text("▶ Resume") }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedButton(
-                                onClick = { navController.popBackStack() },
-                                modifier = Modifier.fillMaxWidth().height(48.dp)
-                            ) { Text("Quit Game") }
+                            Column(
+                                modifier = Modifier.padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("⏸ Paused", fontSize = 28.sp, fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 24.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Music", fontSize = 16.sp)
+                                    androidx.compose.material3.Switch(
+                                        checked = isMusicEnabled,
+                                        onCheckedChange = { soundViewModel.setMusicEnabled(it) }
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Sound Effects", fontSize = 16.sp)
+                                    androidx.compose.material3.Switch(
+                                        checked = isSoundEnabled,
+                                        onCheckedChange = { soundViewModel.setSoundEnabled(it) }
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(
+                                    onClick = { gameViewModel.resumeGame() },
+                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                ) { Text("▶ Resume") }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                OutlinedButton(
+                                    onClick = { navController.popBackStack() },
+                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                ) { Text("Quit Game") }
+                            }
                         }
                     }
                 }
@@ -640,6 +705,14 @@ fun GameplayScreen(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
+                            if (uiState.value.usedHintThisGame) {
+                                Text(
+                                    "💡 Hint used",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
                             Spacer(modifier = Modifier.height(20.dp))
                             Button(
                                 onClick = { gameViewModel.continueAfterWin() },
@@ -1081,17 +1154,21 @@ private fun HangmanDrawing(
 /** Big countdown + solved-word counter used while [GameMode.TIMED] is active. */
 @Composable
 private fun TimerChip(secondsLeft: Long, wordsSolved: Int) {
-    val color = when {
+    val targetColor = when {
         secondsLeft > 30L -> Color(0xFF27AE60)
         secondsLeft > 10L -> Color(0xFFF39C12)
         else -> Color(0xFFE74C3C)
     }
-    Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.15f)) {
+    val color = remember(targetColor) { androidx.compose.animation.Animatable(targetColor) }
+    LaunchedEffect(targetColor) {
+        color.animateTo(targetColor, animationSpec = tween(600))
+    }
+    Surface(shape = RoundedCornerShape(8.dp), color = color.value.copy(alpha = 0.15f)) {
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("⏱ ${secondsLeft}s", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color)
+            Text("⏱ ${secondsLeft}s", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color.value)
             Text(
                 "$wordsSolved word${if (wordsSolved == 1) "" else "s"}",
                 fontSize = 10.sp,

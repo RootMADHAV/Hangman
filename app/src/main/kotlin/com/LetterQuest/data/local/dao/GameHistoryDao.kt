@@ -42,6 +42,6 @@ interface GameHistoryDao {
     @Query("UPDATE game_history SET score = :score, sessionScore = :sessionScore, updatedAt = :updatedAt WHERE uuid = :uuid")
     suspend fun updateScore(uuid: String, score: Int, sessionScore: Int, updatedAt: Long)
 
-    @Query("INSERT OR REPLACE INTO game_history (uuid, word, difficulty, won, score, sessionScore, guessedLetters, incorrectGuesses, elapsedSeconds, playedAt, updatedAt, category) VALUES (:uuid, :word, :difficulty, :won, :score, :sessionScore, :guessedLetters, :incorrectGuesses, :elapsedSeconds, :playedAt, :updatedAt, :category)")
-    suspend fun upsertByUuid(uuid: String, word: String, difficulty: String, won: Boolean, score: Int, sessionScore: Int, guessedLetters: String, incorrectGuesses: String, elapsedSeconds: Long, playedAt: Long, updatedAt: Long, category: String?)
+    @Query("INSERT OR REPLACE INTO game_history (uuid, word, difficulty, won, score, sessionScore, guessedLetters, incorrectGuesses, elapsedSeconds, playedAt, updatedAt, category, hintsUsed, gameMode) VALUES (:uuid, :word, :difficulty, :won, :score, :sessionScore, :guessedLetters, :incorrectGuesses, :elapsedSeconds, :playedAt, :updatedAt, :category, :hintsUsed, :gameMode)")
+    suspend fun upsertByUuid(uuid: String, word: String, difficulty: String, won: Boolean, score: Int, sessionScore: Int, guessedLetters: String, incorrectGuesses: String, elapsedSeconds: Long, playedAt: Long, updatedAt: Long, category: String?, hintsUsed: Int, gameMode: String)
 }

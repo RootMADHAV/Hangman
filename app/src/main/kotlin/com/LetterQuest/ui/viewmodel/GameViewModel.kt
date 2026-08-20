@@ -1,7 +1,9 @@
 package com.LetterQuest.ui.viewmodel
 
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.LetterQuest.domain.model.AuthState
 import com.LetterQuest.domain.model.ChallengeMode
 import com.LetterQuest.domain.model.ChallengeModeConfig
 import com.LetterQuest.domain.model.DailyChallenge
@@ -26,6 +28,7 @@ import com.LetterQuest.domain.repository.StatisticsRepository
 import com.LetterQuest.domain.repository.TokenRepository
 import com.LetterQuest.domain.usecase.AchievementUnlocker
 import com.LetterQuest.domain.usecase.CloudSyncUseCase
+import com.LetterQuest.domain.usecase.GameplayConfig
 import com.LetterQuest.domain.usecase.GuessingEngine
 import com.LetterQuest.domain.usecase.MusicPlayer
 import com.LetterQuest.domain.usecase.ScoreCalculator
@@ -41,6 +44,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -58,6 +62,7 @@ data class GameUIState(
     val hintMessage: String? = null,
     val hintMessagePersistent: String? = null,
     val usedHintThisGame: Boolean = false,
+    val hintsUsedThisGame: Int = 0,
     val isDailyChallenge: Boolean = false,
     val winStreak: Int = 0,
     val showingWinCelebration: Boolean = false,
@@ -76,16 +81,17 @@ data class GameUIState(
 class GameViewModel @Inject constructor(
     private val wordSelector: WordSelector,
     private val statisticsRepository: StatisticsRepository,
-    private val achievementUnlocker: AchievementUnlocker,
     private val gameHistoryRepository: GameHistoryRepository,
     private val tokenRepository: TokenRepository,
     private val dailyChallengeRepository: DailyChallengeRepository,
     private val shopRepository: ShopRepository,
-    private val cloudSyncUseCase: CloudSyncUseCase,
     private val leaderboardRepository: LeaderboardRepository,
     private val musicPlayer: MusicPlayer,
     private val soundPlayer: SoundPlayer,
-    private val preferencesRepository: PreferencesRepository
+    private val preferencesRepository: PreferencesRepository,
+    private val authRepository: com.LetterQuest.domain.repository.AuthRepository,
+    private val gameTimer: GameTimer,
+    private val gameResultHandler: GameResultHandler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameUIState())
@@ -99,7 +105,6 @@ class GameViewModel @Inject constructor(
             initialValue = UserTokens.STARTING_BALANCE
         )
 
-    /** Perks the player has activated for this game. */
     val ownedPerks: StateFlow<Set<ShopItem>> = shopRepository.observeOwnedItems()
         .stateIn(
             scope = viewModelScope,
@@ -111,12 +116,6 @@ class GameViewModel @Inject constructor(
         .observePreferences()
         .map { it.soundEnabled }
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
-
-    /** 1-second ticker driving [GameStatus.timeRemainingSeconds] in timed mode. */
-    private var timerJob: Job? = null
-
-    /** Tracks the in-flight [advanceTimedWord] coroutine so it can be cancelled on session expiry. */
-    private var advanceTimedWordJob: Job? = null
 
     /** [hint]'s price given the perks the player has active and the current mode. */
     fun effectiveHintCost(hint: HintType, perks: Set<ShopItem>): Int {
@@ -190,10 +189,6 @@ class GameViewModel @Inject constructor(
         )
     }
 
-    /**
-     * Starts today's daily challenge. The word is fixed for the day, so difficulty and
-     * category are taken from the puzzle rather than chosen by the player.
-     */
     fun initializeDailyChallenge() {
         musicPlayer.pause()
         viewModelScope.launch {
@@ -209,10 +204,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Shared start-of-game flow used by every entry point: clears single-use perks,
-     * resets per-game UI state, loads a word, and emits the result.
-     */
     private fun startGame(
         categoryId: String,
         isDailyChallenge: Boolean,
@@ -232,6 +223,7 @@ class GameViewModel @Inject constructor(
                     tokensEarnedThisGame = 0,
                     hintMessage = null,
                     usedHintThisGame = false,
+                    hintsUsedThisGame = 0,
                     isDailyChallenge = isDailyChallenge,
                     showingWinCelebration = false,
                     showingTimedSummary = false,
@@ -252,8 +244,16 @@ class GameViewModel @Inject constructor(
                         perks = perks
                     )
                     updateState { copy(gameStatus = status, isLoading = false, isProcessingAction = false) }
-                    if (mode.isTimed && (timerJob == null || timerJob?.isActive != true)) {
-                        startTimedTimer(GameMode.TIMED_SESSION_SECONDS)
+                    if (mode.isTimed) {
+                        gameTimer.start(
+                            totalSeconds = GameMode.TIMED_SESSION_SECONDS,
+                            scope = this,
+                            onTick = { remaining ->
+                                updateState { copy(gameStatus = gameStatus?.copy(timeRemainingSeconds = remaining)) }
+                            }
+                        ) {
+                            onTimedSessionExpired()
+                        }
                     }
                 },
                 onFailure = { error ->
@@ -265,7 +265,6 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /** Builds a fresh game status for the given [mode]. */
     private suspend fun newGameStatus(
         word: Word,
         mode: GameMode = GameMode.CLASSIC,
@@ -299,11 +298,6 @@ class GameViewModel @Inject constructor(
         )
     }
 
-    /**
-     * Called when the player taps "Continue" on the win-celebration overlay.
-     * Loads the next word with the same difficulty and category, keeping the win streak
-     * and advancing the Classic level counter.
-     */
     fun continueAfterWin() {
         if (_uiState.value.isProcessingAction) return
         updateState { copy(isProcessingAction = true) }
@@ -314,7 +308,7 @@ class GameViewModel @Inject constructor(
 
         updateState {
             copy(
-                totalTokensEarned = state.totalTokensEarned + state.tokensEarnedThisGame
+                totalTokensEarned = totalTokensEarned + tokensEarnedThisGame
             )
         }
 
@@ -349,10 +343,9 @@ class GameViewModel @Inject constructor(
         )
     }
 
-    /** Starts a brand-new 60-second timed session with the same difficulty/category. */
     fun restartTimedSession() {
         val status = _uiState.value.gameStatus ?: return
-        timerJob?.cancel()
+        gameTimer.cancel()
         updateState {
             copy(
                 totalTokensEarned = totalTokensEarned + tokensEarnedThisGame,
@@ -373,159 +366,11 @@ class GameViewModel @Inject constructor(
     }
 
     // ------------------------------------------------------------------
-    // Timed mode session clock
-    // ------------------------------------------------------------------
-
-    private fun startTimedTimer(totalSeconds: Long) {
-        timerJob?.cancel()
-        timerJob = viewModelScope.launch {
-            var remaining = totalSeconds
-            while (remaining > 0) {
-                updateState {
-                    copy(gameStatus = gameStatus?.copy(timeRemainingSeconds = remaining))
-                }
-                delay(1000L)
-                // Pause freezes the clock without cancelling the session.
-                if (_uiState.value.gameStatus?.isPaused == true) continue
-                remaining--
-            }
-            updateState { copy(gameStatus = gameStatus?.copy(timeRemainingSeconds = 0)) }
-            onTimedSessionExpired()
-        }
-    }
-
-    /**
-     * Clock hit zero: finalize any in-flight word, then pay the timed payout —
-     * [UserTokens.EARNED_PER_TIMED_WORD] tokens per word solved plus combo bonuses —
-     * and surface the summary overlay.
-     */
-    private fun onTimedSessionExpired() {
-        advanceTimedWordJob?.cancel()
-        advanceTimedWordJob = null
-        val status = _uiState.value.gameStatus ?: return
-        if (!status.mode.isTimed) return
-
-        viewModelScope.launch {
-            val solved = _uiState.value.timedWordsSolved
-            val combos = _uiState.value.timedWordMaxCombos
-            val basePayout = solved * UserTokens.EARNED_PER_TIMED_WORD
-            val comboPayout = combos.sumOf { it * UserTokens.COMBO_STEP_TOKENS }
-            val payout = basePayout + comboPayout
-            var earned = 0
-            if (payout > 0) {
-                val result = tokenRepository.earnTokens(payout)
-                if (result.isSuccess) {
-                    earned = payout
-                } else {
-                    android.util.Log.w("GameViewModel", "Failed to earn timed payout: ${result.exceptionOrNull()?.message}")
-                }
-            }
-
-            val current = _uiState.value.gameStatus ?: status
-            val finalized = if (current.state == GameState.PLAYING) {
-                current.copy(state = GameState.LOST)
-            } else {
-                current
-            }
-
-            updateState {
-                copy(
-                    gameStatus = finalized.copy(
-                        timeRemainingSeconds = 0,
-                        gameEndTime = System.currentTimeMillis()
-                    ),
-                    tokensEarnedThisGame = tokensEarnedThisGame + earned,
-                    showingTimedSummary = true
-                )
-            }
-
-            if (current.state == GameState.PLAYING) {
-                recordGameResult(finalized)
-            }
-        }
-    }
-
-    /** Moves straight to the next word inside a running timed session (no overlay). */
-    private fun advanceTimedWord(finished: GameStatus) {
-        advanceTimedWordJob?.cancel()
-        advanceTimedWordJob = viewModelScope.launch {
-            val message = if (finished.state == GameState.WON) {
-                "✓ Word solved!"
-            } else {
-                "The word was: ${finished.word.normalizedValue}"
-            }
-            updateState { copy(hintMessage = message) }
-
-            delay(600L)
-
-            val remaining = _uiState.value.gameStatus?.timeRemainingSeconds ?: 0L
-            if (remaining <= 0L) {
-                return@launch
-            }
-            val modeledWords = _uiState.value.timedWordsSolved
-            val challengeMode = _uiState.value.challengeConfig.mode
-
-            var nextWord: Word? = null
-            var attempts = 0
-            while (nextWord == null && attempts < 3) {
-                val result = wordSelector.selectRandomWordExcluding(
-                    finished.word.difficulty,
-                    _uiState.value.categoryId,
-                    finished.word.normalizedValue
-                )
-                result.onSuccess { word ->
-                    if (word.normalizedValue != finished.word.normalizedValue) {
-                        nextWord = word
-                    }
-                }.onFailure {
-                    updateState { copy(error = it.message ?: "Failed to load next word") }
-                    return@launch
-                }
-                attempts++
-            }
-
-            if (nextWord == null) {
-                val fallback = wordSelector.selectRandomWord(
-                    finished.word.difficulty,
-                    _uiState.value.categoryId
-                )
-                fallback.onSuccess { nextWord = it }
-                fallback.onFailure {
-                    updateState { copy(error = it.message ?: "Failed to load next word") }
-                    return@launch
-                }
-            }
-
-            val word = nextWord ?: return@launch
-            val status = newGameStatus(
-                word,
-                mode = GameMode.TIMED,
-                timeRemainingSeconds = _uiState.value.gameStatus?.timeRemainingSeconds,
-                timedSolved = modeledWords,
-                keepScore = finished.score,
-                challengeMode = challengeMode,
-                challengeConfig = _uiState.value.challengeConfig
-            )
-            updateState {
-                copy(
-                    gameStatus = status,
-                    guessResult = null,
-                    lastGuessedLetter = null,
-                    usedHintThisGame = false,
-                    hintMessage = null,
-                    hintMessagePersistent = null
-                )
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------
     // Guessing
     // ------------------------------------------------------------------
 
     fun guessLetter(letter: Char) {
         val currentState = _uiState.value.gameStatus ?: return
-        // Block guesses when game is already over (prevents background tap bug)
         if (currentState.isGameOver || currentState.isPaused) return
 
         if (!GuessingEngine.validateLetter(letter)) {
@@ -542,8 +387,6 @@ class GameViewModel @Inject constructor(
         }
         val newMaxCombo = maxOf(currentState.maxCombo, newCombo)
 
-        // Timed Blitz: the score updates live — +N per correct letter, +bonus when the
-        // word completes. Other modes keep score 0 until the win is finalized.
         val scoredStatus = if (newGameStatus.mode.isTimed && result == GuessResult.Correct) {
             newGameStatus.copy(
                 score = newGameStatus.score + GameMode.TIMED_POINTS_PER_CORRECT_LETTER +
@@ -591,14 +434,11 @@ class GameViewModel @Inject constructor(
     // Hints
     // ------------------------------------------------------------------
 
-    /** Spends [hint]'s cost and applies its effect. */
     fun useHint(hint: HintType) {
         val currentState = _uiState.value.gameStatus ?: return
         if (currentState.isGameOver || currentState.isPaused) return
-        if (_uiState.value.isProcessingAction) return  // serialize taps
+        if (_uiState.value.isProcessingAction) return
 
-        // Daily Challenge rules: Skip is forbidden — you must actually solve the
-        // daily word — and the Clue and Extra Life power-ups are not offered there.
         if (hint == HintType.SKIP_WORD && _uiState.value.isDailyChallenge) {
             updateState { copy(hintMessage = "Skip is disabled for the daily challenge") }
             return
@@ -607,9 +447,6 @@ class GameViewModel @Inject constructor(
             updateState { copy(hintMessage = "Extra Life is only available in Classic mode") }
             return
         }
-
-        // The Clue power-up is only offered in Timed Blitz — in Classic mode the clue
-        // is already shown up-front, so buying it there would do nothing new.
         if (hint == HintType.CLUE && !currentState.mode.isTimed) {
             updateState { copy(hintMessage = "Clue is already shown when available") }
             return
@@ -623,7 +460,12 @@ class GameViewModel @Inject constructor(
 
                 tokenRepository.spendTokens(cost)
                     .onSuccess {
-                        updateState { copy(usedHintThisGame = true) }
+                        updateState {
+                            copy(
+                                usedHintThisGame = true,
+                                hintsUsedThisGame = hintsUsedThisGame + 1
+                            )
+                        }
                         when (hint) {
                             HintType.CLUE -> applyShowHint(currentState)
                             HintType.REVEAL_LETTER -> applyRevealLetter(currentState)
@@ -659,10 +501,7 @@ class GameViewModel @Inject constructor(
     }
 
     private fun applyRevealLetter(currentState: GameStatus) {
-        // Uses the LIVE state (not the captured lambda param) so back-to-back hints
-        // see the reveal the previous tap just applied — no repeated reveals.
         val liveStatus = _uiState.value.gameStatus ?: currentState
-
         val hidden = (liveStatus.word.normalizedValue.toSet() - liveStatus.guessedLetters)
             .filter(Char::isLetter)
 
@@ -690,9 +529,6 @@ class GameViewModel @Inject constructor(
 
     private fun applyRemoveWrongLetters(currentState: GameStatus) {
         val liveStatus = _uiState.value.gameStatus ?: currentState
-
-        // Find alphabet letters that are (a) unguessed, and (b) NOT present in the word —
-        // these are the "wrong letters" still available as tappable keys.
         val wordLetters = liveStatus.word.normalizedValue.toSet().filter(Char::isLetter)
         val availableWrongLetters = ('A'..'Z')
             .filter { it !in liveStatus.guessedLetters && it !in liveStatus.incorrectGuesses }
@@ -704,15 +540,6 @@ class GameViewModel @Inject constructor(
         }
 
         val removed = availableWrongLetters.shuffled().take(2)
-
-        // Mark them as "incorrectly guessed" — this greys out the tiles and prevents
-        // accidental taps — without consuming any of the player's remaining attempts.
-        // Refund the player's tokens if we couldn't remove anything useful.
-        if (removed.isEmpty()) {
-            updateState { copy(hintMessage = "Nothing to remove") }
-            return
-        }
-
         val updated = liveStatus.copy(
             incorrectGuesses = liveStatus.incorrectGuesses + removed.toSet()
         )
@@ -778,11 +605,12 @@ class GameViewModel @Inject constructor(
     fun pauseGame() {
         val currentState = _uiState.value.gameStatus ?: return
         if (currentState.isPaused || currentState.isGameOver) return
+        gameTimer.cancel()
         updateState {
             copy(
                 gameStatus = currentState.copy(
                     isPaused = true,
-                    pauseStartTime = System.currentTimeMillis()
+                    pauseStartTime = android.os.SystemClock.elapsedRealtime()
                 )
             )
         }
@@ -791,7 +619,7 @@ class GameViewModel @Inject constructor(
     fun resumeGame() {
         val currentState = _uiState.value.gameStatus ?: return
         if (!currentState.isPaused || currentState.pauseStartTime == null) return
-        val pauseDuration = System.currentTimeMillis() - currentState.pauseStartTime
+        val pauseDuration = android.os.SystemClock.elapsedRealtime() - currentState.pauseStartTime
         updateState {
             copy(
                 gameStatus = currentState.copy(
@@ -800,6 +628,23 @@ class GameViewModel @Inject constructor(
                     totalPausedMillis = currentState.totalPausedMillis + pauseDuration
                 )
             )
+        }
+        if (currentState.mode.isTimed) {
+            val remaining = _uiState.value.gameStatus?.timeRemainingSeconds ?: 0L
+            if (remaining > 0L) {
+                gameTimer.start(
+                    totalSeconds = remaining,
+                    scope = viewModelScope,
+                    onTick = { tick ->
+                        updateState { copy(gameStatus = gameStatus?.copy(timeRemainingSeconds = tick)) }
+                    }
+                ) {
+                    onTimedSessionExpired()
+                }
+            }
+            if (currentState.state == GameState.WON && !_uiState.value.showingTimedSummary) {
+                advanceTimedWord(currentState)
+            }
         }
     }
 
@@ -818,8 +663,10 @@ class GameViewModel @Inject constructor(
                     )
                 }
             }
-            recordGameResult(newGameStatus)
-            advanceTimedWord(newGameStatus)
+            viewModelScope.launch {
+                recordGameResult(newGameStatus)
+                advanceTimedWord(newGameStatus)
+            }
             return
         }
 
@@ -837,9 +684,9 @@ class GameViewModel @Inject constructor(
                     )
                 }
             }
-            recordGameResult(withStars)
+            viewModelScope.launch { recordGameResult(withStars) }
         } else {
-            recordGameResult(newGameStatus)
+            viewModelScope.launch { recordGameResult(newGameStatus) }
             viewModelScope.launch { playSoundIfEnabled { soundPlayer.playGameOverSound() } }
         }
 
@@ -848,127 +695,137 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    /** Called when the player taps "Go Home" on the daily-win overlay. */
-    fun dismissDailyWinCelebration() {
-        if (_uiState.value.isProcessingAction) return
-        updateState { copy(showingDailyWinCelebration = false) }
-    }
-
-    private fun awardTokens(amount: Int) {
-        viewModelScope.launch {
-            tokenRepository.earnTokens(amount)
-                .onSuccess {
-                    updateState { copy(tokensEarnedThisGame = tokensEarnedThisGame + amount) }
-                }
-                .onFailure {
-                    android.util.Log.w("GameViewModel", "Failed to award $amount tokens: ${it.message}")
-                }
+    suspend fun recordGameResult(gameStatus: GameStatus) {
+        val outcome = gameResultHandler.process(
+            scope = viewModelScope,
+            gameStatus = gameStatus,
+            currentSessionScore = _uiState.value.sessionScore,
+            challengeConfig = _uiState.value.challengeConfig,
+            isDailyChallenge = _uiState.value.isDailyChallenge,
+            hintsUsedThisGame = _uiState.value.hintsUsedThisGame,
+            usedHintThisGame = _uiState.value.usedHintThisGame
+        )
+        outcome.error?.let { updateState { copy(error = it) } }
+        updateState {
+            copy(
+                sessionScore = outcome.sessionScore,
+                tokensEarnedThisGame = tokensEarnedThisGame + outcome.tokensEarned,
+                gameStatus = outcome.finalGameStatus
+            )
         }
     }
 
-    private fun recordGameResult(gameStatus: GameStatus) {
+    private suspend fun onTimedSessionExpired() {
+        gameTimer.cancelAdvance()
+        val status = _uiState.value.gameStatus ?: return
+        if (!status.mode.isTimed) return
+
+        val solved = _uiState.value.timedWordsSolved
+        val combos = _uiState.value.timedWordMaxCombos
+        val basePayout = solved * UserTokens.EARNED_PER_TIMED_WORD
+        val comboPayout = combos.sumOf { it * UserTokens.COMBO_STEP_TOKENS }
+        val payout = basePayout + comboPayout
+        var earned = 0
+        if (payout > 0) {
+            val result = tokenRepository.earnTokens(payout)
+            if (result.isSuccess) {
+                earned = payout
+            }
+        }
+
+        val current = _uiState.value.gameStatus ?: status
+        val finalized = if (current.state == GameState.PLAYING) {
+            current.copy(state = GameState.LOST)
+        } else {
+            current
+        }
+
+        updateState {
+            copy(
+                gameStatus = finalized.copy(
+                    timeRemainingSeconds = 0,
+                    gameEndTime = android.os.SystemClock.elapsedRealtime()
+                ),
+                tokensEarnedThisGame = tokensEarnedThisGame + earned,
+                showingTimedSummary = true
+            )
+        }
+
+        if (current.state == GameState.PLAYING) {
+            recordGameResult(finalized)
+        }
+    }
+
+    private fun advanceTimedWord(finished: GameStatus) {
         viewModelScope.launch {
-            try {
-                val perks = gameStatus.perks
-                val scoreMultiplier = if (ShopItem.SCORE_BOOST in perks) {
-                    ShopItem.SCORE_BOOST_MULTIPLIER
-                } else {
-                    1f
-                } * _uiState.value.challengeConfig.scoreMultiplier
-                val score = ScoreCalculator.calculateScore(gameStatus, scoreMultiplier)
-                val won = gameStatus.state == GameState.WON
-                statisticsRepository.recordGameResult(won, score)
+            val message = if (finished.state == GameState.WON) {
+                "✓ Word solved!"
+            } else {
+                "The word was: ${finished.word.normalizedValue}"
+            }
+            updateState { copy(hintMessage = message) }
 
-                val currentSessionScore = _uiState.value.sessionScore
-                val newSessionScore = if (won) currentSessionScore + score else currentSessionScore
-                updateState { copy(sessionScore = newSessionScore) }
-
+            gameTimer.advanceAfterDelay(this) {
+                val remaining = _uiState.value.gameStatus?.timeRemainingSeconds ?: 0L
+                if (remaining <= 0L || _uiState.value.showingTimedSummary) {
+                    return@advanceAfterDelay
+                }
+                val modeledWords = _uiState.value.timedWordsSolved
                 val challengeMode = _uiState.value.challengeConfig.mode
-                val baseWin = when {
-                    _uiState.value.isDailyChallenge -> 0
-                    challengeMode == ChallengeMode.LIMITED_GUESSES -> UserTokens.EARNED_PER_LIMITED_WIN
-                    else -> UserTokens.EARNED_PER_CLASSIC_WIN
-                }
-                val comboBonus = if (challengeMode == ChallengeMode.LIMITED_GUESSES) {
-                    0
-                } else {
-                    gameStatus.maxCombo * UserTokens.COMBO_STEP_TOKENS
-                }
-                val gamePayout = when {
-                    gameStatus.mode.isTimed -> 0
-                    won -> baseWin + comboBonus
-                    else -> 0
-                }
-                if (gamePayout > 0) {
-                    val result = tokenRepository.earnTokens(gamePayout)
-                    if (result.isSuccess) {
-                        updateState { copy(tokensEarnedThisGame = tokensEarnedThisGame + gamePayout) }
-                    } else {
-                        android.util.Log.w("GameViewModel", "Failed to earn game payout: ${result.exceptionOrNull()?.message}")
-                    }
-                }
 
-                val gameEndTime = System.currentTimeMillis()
-                val historyEntry = GameHistoryEntry(
-                    word = gameStatus.word.value,
-                    difficulty = gameStatus.word.difficulty,
-                    won = won,
-                    score = score,
-                    sessionScore = newSessionScore,
-                    guessedLetters = gameStatus.guessedLetters,
-                    incorrectGuesses = gameStatus.incorrectGuesses,
-                    elapsedSeconds = (gameEndTime - gameStatus.gameStartTime) / 1000,
-                    playedAt = gameEndTime,
-                    updatedAt = gameEndTime,
-                    category = gameStatus.word.category
-                )
-                gameHistoryRepository.addGameEntry(historyEntry)
-                viewModelScope.launch { cloudSyncUseCase.syncAll() }
-
-                val statistics = statisticsRepository.getStatistics().getOrNull()
-                if (statistics != null) {
-                    leaderboardRepository.submitScore(
-                        metric = LeaderboardMetric.TOTAL_SCORE,
-                        value = score.toFloat(),
-                        gamesPlayed = statistics.gamesPlayed,
-                        gamesWon = statistics.gamesWon
+                var nextWord: Word? = null
+                var attempts = 0
+                while (nextWord == null && attempts < 3) {
+                    val result = wordSelector.selectRandomWordExcluding(
+                        finished.word.difficulty,
+                        _uiState.value.categoryId,
+                        finished.word.normalizedValue
                     )
-                    achievementUnlocker.evaluateAchievements(
-                        gameStatus = gameStatus,
-                        statistics = statistics,
-                        usedHint = _uiState.value.usedHintThisGame,
-                        isTimedWord = gameStatus.mode.isTimed
-                    )
-                }
-
-                if (!won) {
-                    updateState { copy(sessionScore = 0) }
-                }
-
-                if (_uiState.value.isDailyChallenge && won) {
-                    val completionResult = dailyChallengeRepository.recordCompletion(won = true)
-                    completionResult.onSuccess {
-                        val bonusResult = tokenRepository.earnTokens(DailyChallenge.COMPLETION_BONUS_TOKENS)
-                        if (bonusResult.isSuccess) {
-                            achievementUnlocker.evaluateDailyAchievements()
-                            updateState {
-                                copy(
-                                    tokensEarnedThisGame = tokensEarnedThisGame +
-                                        DailyChallenge.COMPLETION_BONUS_TOKENS
-                                )
-                            }
-                        } else {
-                            android.util.Log.w("GameViewModel", "Failed to earn daily completion bonus: ${bonusResult.exceptionOrNull()?.message}")
+                    result.onSuccess { word ->
+                        if (word.normalizedValue != finished.word.normalizedValue) {
+                            nextWord = word
                         }
                     }.onFailure {
-                        updateState { copy(error = it.message ?: "Failed to record daily challenge completion") }
+                        updateState { copy(error = it.message ?: "Failed to load next word") }
+                        return@advanceAfterDelay
+                    }
+                    attempts++
+                }
+
+                if (nextWord == null) {
+                    val fallback = wordSelector.selectRandomWordExcluding(
+                        finished.word.difficulty,
+                        _uiState.value.categoryId,
+                        finished.word.normalizedValue
+                    )
+                    fallback.onSuccess { nextWord = it }
+                    fallback.onFailure {
+                        updateState { copy(error = it.message ?: "Failed to load next word") }
+                        return@advanceAfterDelay
                     }
                 }
 
-                val finalScore = if (gameStatus.mode.isTimed) gameStatus.score else score
-                updateState { copy(gameStatus = gameStatus.copy(score = finalScore, gameEndTime = gameEndTime)) }
-            } catch (e: Exception) {
-                updateState { copy(error = e.message ?: "Failed to save game result") }
+                val word = nextWord ?: return@advanceAfterDelay
+                val status = newGameStatus(
+                    word,
+                    mode = GameMode.TIMED,
+                    timeRemainingSeconds = _uiState.value.gameStatus?.timeRemainingSeconds,
+                    timedSolved = modeledWords,
+                    keepScore = finished.score,
+                    challengeMode = challengeMode,
+                    challengeConfig = _uiState.value.challengeConfig
+                )
+                updateState {
+                    copy(
+                        gameStatus = status,
+                        guessResult = null,
+                        lastGuessedLetter = null,
+                        usedHintThisGame = false,
+                        hintsUsedThisGame = 0,
+                        hintMessage = null,
+                        hintMessagePersistent = null
+                    )
+                }
             }
         }
     }
@@ -996,44 +853,48 @@ class GameViewModel @Inject constructor(
     // ------------------------------------------------------------------
 
     fun resetGame() {
-        timerJob?.cancel()
-        timerJob = null
+        gameTimer.cancel()
         _uiState.value = GameUIState()
         musicPlayer.resume()
     }
 
-    /** Retry feature removed — players move to a new word after a loss. */
+    fun dismissDailyWinCelebration() {
+        if (_uiState.value.isProcessingAction) return
+        updateState { copy(showingDailyWinCelebration = false) }
+    }
+
     fun retryCurrentWord() = Unit
 
     override fun onCleared() {
-        timerJob?.cancel()
+        gameTimer.onCleared()
+        musicPlayer.resume()
         super.onCleared()
     }
 
-    /** Atomic state update helper — avoids the read-then-write race of
-     *  `_uiState.value = _uiState.value.copy(...)`. */
     private inline fun updateState(transform: GameUIState.() -> GameUIState) {
         _uiState.update(transform)
     }
 
+    private fun awardTokens(amount: Int) {
+        viewModelScope.launch {
+            tokenRepository.earnTokens(amount)
+                .onSuccess {
+                    updateState { copy(tokensEarnedThisGame = tokensEarnedThisGame + amount) }
+                }
+                .onFailure {
+                    android.util.Log.w("GameViewModel", "Failed to award $amount tokens: ${it.message}")
+                }
+        }
+    }
+
     companion object {
-        /**
-         * Challenge mode chosen on the setup screen, consumed by the next gameplay screen.
-         *
-         * Because each navigation destination receives its own ViewModel instance and
-         * the mode cannot be smuggled through the (shared, frozen) navigation routes,
-         * the selection is parked here and claimed by the gameplay screen when it
-         * initializes its game. Defaults back to [ChallengeMode.CLASSIC] once consumed.
-         */
         @Volatile
         private var pendingChallengeMode: ChallengeMode = ChallengeMode.CLASSIC
 
-        /** Call before navigating toward the gameplay screen to pick the next game's challenge mode. */
         fun selectChallengeModeForNextGame(mode: ChallengeMode) {
             pendingChallengeMode = mode
         }
 
-        /** Returns the queued mode and resets the slot to [ChallengeMode.CLASSIC]. */
         fun consumePendingChallengeMode(): ChallengeMode {
             val mode = pendingChallengeMode
             pendingChallengeMode = ChallengeMode.CLASSIC
