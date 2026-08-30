@@ -59,12 +59,13 @@ class CloudSyncUseCase @Inject constructor(
             }
         }
 
+        val lastSyncTimestamp = cloudSyncRepository.getLastSyncTimestamp() ?: 0L
         val localGames = gameHistoryRepository.getAllGames().getOrNull().orEmpty()
-        val remoteGames = cloudSyncRepository.downloadGameHistory().getOrNull().orEmpty()
+        val remoteGames = cloudSyncRepository.downloadGameHistory(lastSyncTimestamp).getOrNull().orEmpty()
         val mergedGames = mergeGameHistory(localGames, remoteGames)
 
         val localAchievements = achievementRepository.getAllAchievements().getOrNull().orEmpty()
-        val remoteAchievements = cloudSyncRepository.downloadAchievements().getOrNull().orEmpty()
+        val remoteAchievements = cloudSyncRepository.downloadAchievements(lastSyncTimestamp).getOrNull().orEmpty()
         val mergedAchievements = mergeAchievements(localAchievements, remoteAchievements)
 
         gameHistoryRepository.syncGames(mergedGames)
@@ -72,6 +73,8 @@ class CloudSyncUseCase @Inject constructor(
 
         cloudSyncRepository.uploadGameHistory(mergedGames)
         cloudSyncRepository.uploadAchievements(mergedAchievements)
+
+        cloudSyncRepository.setLastSyncTimestamp(System.currentTimeMillis())
 
         syncQueue.drain()
 

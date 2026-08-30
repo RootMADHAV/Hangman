@@ -9,9 +9,9 @@ interface CloudSyncRepository {
     suspend fun uploadProfile(profile: PlayerProfile): Result<Unit>
     suspend fun downloadProfile(): Result<PlayerProfile?>
     suspend fun uploadGameHistory(entries: List<GameHistoryEntry>): Result<Unit>
-    suspend fun downloadGameHistory(): Result<List<GameHistoryEntry>>
+    suspend fun downloadGameHistory(since: Long = 0L): Result<List<GameHistoryEntry>>
     suspend fun uploadAchievements(achievements: List<Achievement>): Result<Unit>
-    suspend fun downloadAchievements(): Result<List<Achievement>>
+    suspend fun downloadAchievements(since: Long = 0L): Result<List<Achievement>>
     suspend fun uploadLeaderboardScore(
         metric: String,
         value: Float,

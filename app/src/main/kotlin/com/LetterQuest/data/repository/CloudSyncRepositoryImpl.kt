@@ -111,33 +111,38 @@ class CloudSyncRepositoryImpl @Inject constructor(
         Result.failure(e)
     }
 
-    override suspend fun downloadGameHistory(): Result<List<GameHistoryEntry>> = try {
+    override suspend fun downloadGameHistory(since: Long): Result<List<GameHistoryEntry>> = try {
         val user = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
-        val snapshot = firestore.collection("user_game_history")
+        val baseQuery = firestore.collection("user_game_history")
             .document(user.uid)
             .collection("entries")
-            .get()
-            .await()
-        val entries = snapshot.documents.mapNotNull { doc ->
-            try {
-                GameHistoryEntry(
-                    word = doc.getString("word") ?: return@mapNotNull null,
-                    difficulty = Difficulty.valueOf(doc.getString("difficulty") ?: return@mapNotNull null),
-                    won = doc.getBoolean("won") ?: false,
-                    score = doc.getLong("score")?.toInt() ?: 0,
-                    sessionScore = doc.getLong("sessionScore")?.toInt() ?: 0,
-                    guessedLetters = (doc.getString("guessedLetters") ?: "").split(",").filter { it.isNotBlank() }.map { it.single() }.toSet(),
-                    incorrectGuesses = (doc.getString("incorrectGuesses") ?: "").split(",").filter { it.isNotBlank() }.map { it.single() }.toSet(),
-                    elapsedSeconds = doc.getLong("elapsedSeconds") ?: 0,
-                    playedAt = doc.getLong("playedAt") ?: 0,
-                    updatedAt = doc.getLong("updatedAt") ?: 0,
-                    category = doc.getString("category")?.ifBlank { null }
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "Skipping malformed game history doc ${doc.id}", e)
-                null
-            }
+        val query = if (since > 0L) {
+            baseQuery.whereGreaterThanOrEqualTo("updatedAt", since)
+        } else {
+            baseQuery
         }
+        val snapshot = query.get().await()
+            val entries = snapshot.documents.mapNotNull { doc ->
+                try {
+                    GameHistoryEntry(
+                        uuid = doc.getString("uuid") ?: return@mapNotNull null,
+                        word = doc.getString("word") ?: return@mapNotNull null,
+                        difficulty = Difficulty.valueOf(doc.getString("difficulty") ?: return@mapNotNull null),
+                        won = doc.getBoolean("won") ?: false,
+                        score = doc.getLong("score")?.toInt() ?: 0,
+                        sessionScore = doc.getLong("sessionScore")?.toInt() ?: 0,
+                        guessedLetters = (doc.getString("guessedLetters") ?: "").split(",").filter { it.isNotBlank() }.map { it.single() }.toSet(),
+                        incorrectGuesses = (doc.getString("incorrectGuesses") ?: "").split(",").filter { it.isNotBlank() }.map { it.single() }.toSet(),
+                        elapsedSeconds = doc.getLong("elapsedSeconds") ?: 0,
+                        playedAt = doc.getLong("playedAt") ?: 0,
+                        updatedAt = doc.getLong("updatedAt") ?: 0,
+                        category = doc.getString("category")?.ifBlank { null }
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Skipping malformed game history doc ${doc.id}", e)
+                    null
+                }
+            }
         updateStatus(isOnline = true, lastError = null)
         Result.success(entries)
     } catch (e: Exception) {
@@ -217,13 +222,17 @@ class CloudSyncRepositoryImpl @Inject constructor(
         Result.failure(e)
     }
 
-    override suspend fun downloadAchievements(): Result<List<Achievement>> = try {
+    override suspend fun downloadAchievements(since: Long): Result<List<Achievement>> = try {
         val user = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
-        val snapshot = firestore.collection("user_achievements")
+        val baseQuery = firestore.collection("user_achievements")
             .document(user.uid)
             .collection("entries")
-            .get()
-            .await()
+        val query = if (since > 0L) {
+            baseQuery.whereGreaterThanOrEqualTo("updatedAt", since)
+        } else {
+            baseQuery
+        }
+        val snapshot = query.get().await()
         val achievements = snapshot.documents.mapNotNull { doc ->
             val isUnlocked = doc.getBoolean("isUnlocked") ?: false
             val unlockedAt = doc.getLong("unlockedAt")

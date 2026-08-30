@@ -2,8 +2,11 @@ package com.LetterQuest.di
 
 import com.LetterQuest.data.audio.MusicPlayerImpl
 import com.LetterQuest.data.audio.SoundPlayerImpl
+import com.LetterQuest.data.billing.BillingManager
+import com.LetterQuest.data.billing.BillingRepositoryImpl
 import com.LetterQuest.domain.usecase.MusicPlayer
 import com.LetterQuest.domain.usecase.SoundPlayer
+import com.LetterQuest.domain.repository.BillingRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,4 +24,8 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindMusicPlayer(impl: MusicPlayerImpl): MusicPlayer
+
+    @Binds
+    @Singleton
+    abstract fun bindBillingRepository(impl: BillingRepositoryImpl): BillingRepository
 }

@@ -46,7 +46,7 @@ class SoundViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             isMusicEnabled.collect { enabled ->
-                if (enabled) musicPlayer.start() else musicPlayer.stop()
+                if (enabled) musicPlayer.resumeLast() else musicPlayer.stop()
             }
         }
     }
@@ -63,6 +63,14 @@ class SoundViewModel @Inject constructor(
 
     fun setSoundEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSoundEnabled(enabled) }
+    }
+
+    fun refreshMusic() {
+        if (isMusicEnabled.value) {
+            musicPlayer.resumeLast()
+        } else {
+            musicPlayer.stop()
+        }
     }
 
     private inline fun playIfEnabled(crossinline block: suspend SoundPlayer.() -> Unit) {

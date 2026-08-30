@@ -49,6 +49,10 @@ android {
         compose = true
     }
 
+    composeOptions {
+        kotlinCompilerExtensionVersion = "2.0.0"
+    }
+
     lint {
         disable.add("UnusedMaterial3ScaffoldPaddingParameter")
     }
@@ -87,6 +91,11 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
+
+    // Use external kotlinx-metadata-jvm instead of Room's bundled version
+    // to support Kotlin 2.0+ metadata format.
+    implementation(libs.kotlinx.metadata.jvm)
+    kapt(libs.kotlinx.metadata.jvm)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
@@ -127,4 +136,15 @@ dependencies {
     // Debug
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    //billing
+    val billing_version = "7.1.0"
+    implementation("com.android.billingclient:billing-ktx:$billing_version")
+}
+
+kapt {
+    arguments {
+        arg("room.incremental", "true")
+        arg("room.useJarjarredKotlinxMetadata", "false")
+    }
 }

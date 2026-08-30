@@ -59,11 +59,14 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.LetterQuest.domain.model.AuthState
 import com.LetterQuest.ui.navigation.NavigationRoute
 import com.LetterQuest.ui.viewmodel.AuthViewModel
+import com.LetterQuest.ui.viewmodel.SettingsViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
 @Composable
 fun AuthScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by authViewModel.uiState.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -88,9 +91,20 @@ fun AuthScreen(
         }
     }
 
+    val tutorialSettings by settingsViewModel.tutorialSettings.collectAsState()
+
     LaunchedEffect(uiState.authState) {
         if (uiState.authState is AuthState.Authenticated) {
-            navController.navigate(NavigationRoute.Home.route) {
+            val showTutorial = tutorialSettings.showGameplayTutorial
+            if (showTutorial) {
+                settingsViewModel.markTutorialSeen("gameplay")
+            }
+            val destination = if (showTutorial) {
+                NavigationRoute.Tutorial.route
+            } else {
+                NavigationRoute.Home.route
+            }
+            navController.navigate(destination) {
                 popUpTo(NavigationRoute.Auth.route) { inclusive = true }
             }
         }

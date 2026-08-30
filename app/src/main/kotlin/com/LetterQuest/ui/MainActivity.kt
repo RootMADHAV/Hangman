@@ -59,6 +59,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var musicPlayer: com.LetterQuest.domain.usecase.MusicPlayer
 
+    @Inject
+    lateinit var billingRepository: com.LetterQuest.domain.repository.BillingRepository
+
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
 
@@ -68,6 +71,8 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel()
         requestNotificationPermissionIfNeeded()
 
+        billingRepository.setActivity(this)
+
         // Request UMP consent; MobileAds initializes only after consent is confirmed.
         consentManager.requestConsent(this) { canShowAds ->
             if (canShowAds) {
@@ -75,7 +80,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Track launch count; first launch no longer force-navigates to Tutorial.
+        // Track launch count for rate prompt
         val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val launchCount = prefs.getInt("launch_count", 0) + 1
         prefs.edit()
@@ -83,23 +88,6 @@ class MainActivity : ComponentActivity() {
             .putBoolean("is_first_launch", false)
             .apply()
         val showRatePrompt = launchCount >= 10
-
-        // If the player left "Show Tutorial" switched on in Settings, redirect the
-        // first screen to the tutorial and immediately disarm the flag. This way it
-        // shows exactly once per toggle without needing a crash-only path.
-        lifecycleScope.launch {
-            try {
-                val tutorials = preferencesRepository.getTutorialSettings().getOrNull()
-                if (tutorials?.showGameplayTutorial == true) {
-                    prefs.edit().putBoolean("show_tutorial_on_launch", true).apply()
-                    preferencesRepository.setTutorialSeen("gameplay")
-                } else {
-                    prefs.edit().putBoolean("show_tutorial_on_launch", false).apply()
-                }
-            } catch (e: Exception) {
-                prefs.edit().putBoolean("show_tutorial_on_launch", false).apply()
-            }
-        }
 
         lifecycleScope.launch {
             try {
@@ -115,11 +103,7 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             val authState = authRepository.currentUser.first()
-            val tutorials = preferencesRepository.getTutorialSettings().getOrNull()
-            val showTutorial = tutorials?.showGameplayTutorial == true && authState !is com.LetterQuest.domain.model.AuthState.Authenticated
-
             startDestination = when {
-                showTutorial -> NavigationRoute.Tutorial.route
                 authState is com.LetterQuest.domain.model.AuthState.Authenticated -> NavigationRoute.Home.route
                 else -> NavigationRoute.Auth.route
             }
@@ -135,7 +119,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        musicPlayer.start()
     }
 
     override fun onStop() {

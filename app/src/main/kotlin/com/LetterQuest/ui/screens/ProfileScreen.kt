@@ -3,6 +3,7 @@
 package com.LetterQuest.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -494,7 +495,8 @@ private fun AvatarGrid(
                             .background(
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                                 shape = RoundedCornerShape(28.dp)
-                            ),
+                            )
+                            .clickable(onClick = { onSelect(index) }),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = avatar.emoji, fontSize = 28.sp)

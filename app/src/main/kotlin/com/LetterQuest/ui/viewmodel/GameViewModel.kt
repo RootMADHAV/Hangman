@@ -117,6 +117,11 @@ class GameViewModel @Inject constructor(
         .map { it.soundEnabled }
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    private val musicEnabled: StateFlow<Boolean> = preferencesRepository
+        .observePreferences()
+        .map { it.musicEnabled }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
     /** [hint]'s price given the perks the player has active and the current mode. */
     fun effectiveHintCost(hint: HintType, perks: Set<ShopItem>): Int {
         var cost = hint.cost.toFloat()
@@ -144,7 +149,7 @@ class GameViewModel @Inject constructor(
         categoryId: String = WordCategory.ALL_CATEGORIES_ID,
         challengeMode: ChallengeMode = ChallengeMode.CLASSIC
     ) {
-        musicPlayer.pause()
+        musicPlayer.startGameplay()
         val excludedWord = _uiState.value.gameStatus?.word?.normalizedValue
         val challengeConfig = ChallengeModeConfig(
             mode = challengeMode,
@@ -190,7 +195,7 @@ class GameViewModel @Inject constructor(
     }
 
     fun initializeDailyChallenge() {
-        musicPlayer.pause()
+        musicPlayer.startGameplay()
         viewModelScope.launch {
             dailyChallengeRepository.recordAttempt()
             val challengeResult = dailyChallengeRepository.getTodaysChallenge()
@@ -213,15 +218,18 @@ class GameViewModel @Inject constructor(
         errorFallback: String = "Failed to load word",
         wordSource: suspend () -> Result<Word>
     ) {
+        gameTimer.cancel()
         viewModelScope.launch {
             val perks = shopRepository.getOwnedItems().getOrNull().orEmpty()
             updateState {
                 copy(
+                    gameStatus = null,
                     isLoading = true,
                     error = null,
                     categoryId = categoryId,
                     tokensEarnedThisGame = 0,
                     hintMessage = null,
+                    hintMessagePersistent = null,
                     usedHintThisGame = false,
                     hintsUsedThisGame = 0,
                     isDailyChallenge = isDailyChallenge,
@@ -326,10 +334,10 @@ class GameViewModel @Inject constructor(
             wordSource = {
                 when (challengeMode) {
                     ChallengeMode.CATEGORY_CHALLENGE -> {
-                        wordSelector.selectRandomWordExcluding(
-                            finished.word.difficulty,
-                            state.categoryId,
-                            finished.word.normalizedValue
+                        loadWordWithFallback(
+                            preferredDifficulty = finished.word.difficulty,
+                            preferredCategory = state.categoryId,
+                            excludeWord = finished.word.normalizedValue
                         )
                     }
                     else ->
@@ -341,6 +349,36 @@ class GameViewModel @Inject constructor(
                 }
             }
         )
+    }
+
+    private suspend fun loadWordWithFallback(
+        preferredDifficulty: Difficulty,
+        preferredCategory: String,
+        excludeWord: String
+    ): Result<Word> {
+        wordSelector.selectRandomWordExcluding(preferredDifficulty, preferredCategory, excludeWord).let {
+            if (it.isSuccess) return it
+        }
+
+        for (difficulty in Difficulty.values()) {
+            if (difficulty == preferredDifficulty) continue
+            wordSelector.selectRandomWordExcluding(difficulty, preferredCategory, excludeWord).let {
+                if (it.isSuccess) return it
+            }
+        }
+
+        wordSelector.selectRandomWordExcluding(preferredDifficulty, WordCategory.ALL_CATEGORIES_ID, excludeWord).let {
+            if (it.isSuccess) return it
+        }
+
+        for (difficulty in Difficulty.values()) {
+            if (difficulty == preferredDifficulty) continue
+            wordSelector.selectRandomWordExcluding(difficulty, WordCategory.ALL_CATEGORIES_ID, excludeWord).let {
+                if (it.isSuccess) return it
+            }
+        }
+
+        return Result.failure(IllegalArgumentException("No words available"))
     }
 
     fun restartTimedSession() {
@@ -387,10 +425,19 @@ class GameViewModel @Inject constructor(
         }
         val newMaxCombo = maxOf(currentState.maxCombo, newCombo)
 
-        val scoredStatus = if (newGameStatus.mode.isTimed && result == GuessResult.Correct) {
+        val scoredStatus = if (result == GuessResult.Correct) {
+            val points = if (newGameStatus.mode.isTimed) {
+                GameMode.TIMED_POINTS_PER_CORRECT_LETTER +
+                    if (newGameStatus.state == GameState.WON) GameMode.TIMED_POINTS_PER_WORD_SOLVED else 0
+            } else {
+                ScoreCalculator.calculateScoreProgression(
+                    wordLength = newGameStatus.word.normalizedValue.length,
+                    remainingAttempts = newGameStatus.remainingAttempts,
+                    difficultyMultiplier = ScoreCalculator.multiplierFor(newGameStatus.word.difficulty)
+                )
+            }
             newGameStatus.copy(
-                score = newGameStatus.score + GameMode.TIMED_POINTS_PER_CORRECT_LETTER +
-                    if (newGameStatus.state == GameState.WON) GameMode.TIMED_POINTS_PER_WORD_SOLVED else 0,
+                score = newGameStatus.score + points,
                 currentCombo = newCombo,
                 maxCombo = newMaxCombo
             )
@@ -541,7 +588,7 @@ class GameViewModel @Inject constructor(
 
         val removed = availableWrongLetters.shuffled().take(2)
         val updated = liveStatus.copy(
-            incorrectGuesses = liveStatus.incorrectGuesses + removed.toSet()
+            incorrectGuesses = liveStatus.incorrectGuesses - removed.toSet()
         )
 
         updateState {
@@ -606,6 +653,7 @@ class GameViewModel @Inject constructor(
         val currentState = _uiState.value.gameStatus ?: return
         if (currentState.isPaused || currentState.isGameOver) return
         gameTimer.cancel()
+        gameTimer.cancelAdvance()
         updateState {
             copy(
                 gameStatus = currentState.copy(
@@ -628,6 +676,9 @@ class GameViewModel @Inject constructor(
                     totalPausedMillis = currentState.totalPausedMillis + pauseDuration
                 )
             )
+        }
+        if (musicEnabled.value) {
+            musicPlayer.startGameplay()
         }
         if (currentState.mode.isTimed) {
             val remaining = _uiState.value.gameStatus?.timeRemainingSeconds ?: 0L
@@ -706,12 +757,26 @@ class GameViewModel @Inject constructor(
             usedHintThisGame = _uiState.value.usedHintThisGame
         )
         outcome.error?.let { updateState { copy(error = it) } }
-        updateState {
-            copy(
-                sessionScore = outcome.sessionScore,
-                tokensEarnedThisGame = tokensEarnedThisGame + outcome.tokensEarned,
-                gameStatus = outcome.finalGameStatus
-            )
+
+        val currentGameStatus = _uiState.value.gameStatus
+        val isSameGame = currentGameStatus?.word?.normalizedValue == gameStatus.word.normalizedValue &&
+                         currentGameStatus?.mode == gameStatus.mode
+
+        if (isSameGame) {
+            updateState {
+                copy(
+                    sessionScore = outcome.sessionScore,
+                    tokensEarnedThisGame = tokensEarnedThisGame + outcome.tokensEarned,
+                    gameStatus = outcome.finalGameStatus
+                )
+            }
+        } else {
+            updateState {
+                copy(
+                    sessionScore = if (currentGameStatus == null) outcome.sessionScore else sessionScore,
+                    tokensEarnedThisGame = tokensEarnedThisGame + outcome.tokensEarned
+                )
+            }
         }
     }
 
@@ -767,7 +832,7 @@ class GameViewModel @Inject constructor(
 
             gameTimer.advanceAfterDelay(this) {
                 val remaining = _uiState.value.gameStatus?.timeRemainingSeconds ?: 0L
-                if (remaining <= 0L || _uiState.value.showingTimedSummary) {
+                if (remaining <= 0L || _uiState.value.showingTimedSummary || _uiState.value.gameStatus?.isPaused == true) {
                     return@advanceAfterDelay
                 }
                 val modeledWords = _uiState.value.timedWordsSolved
@@ -812,6 +877,7 @@ class GameViewModel @Inject constructor(
                     timeRemainingSeconds = _uiState.value.gameStatus?.timeRemainingSeconds,
                     timedSolved = modeledWords,
                     keepScore = finished.score,
+                    perks = _uiState.value.gameStatus?.perks ?: emptySet(),
                     challengeMode = challengeMode,
                     challengeConfig = _uiState.value.challengeConfig
                 )
@@ -855,7 +921,7 @@ class GameViewModel @Inject constructor(
     fun resetGame() {
         gameTimer.cancel()
         _uiState.value = GameUIState()
-        musicPlayer.resume()
+        musicPlayer.startHome()
     }
 
     fun dismissDailyWinCelebration() {

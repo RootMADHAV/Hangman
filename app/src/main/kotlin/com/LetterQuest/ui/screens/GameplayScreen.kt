@@ -5,6 +5,7 @@ package com.LetterQuest.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -61,10 +62,18 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlin.math.abs
+import kotlin.math.sign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -83,6 +92,7 @@ import com.LetterQuest.domain.model.HintType
 import com.LetterQuest.domain.model.RewardType
 import com.LetterQuest.domain.model.WordCategory
 import com.LetterQuest.ui.components.AchievementNotification
+import com.LetterQuest.ui.screens.SoulCandleVisual
 import com.LetterQuest.ui.navigation.NavigationRoute
 import com.LetterQuest.ui.viewmodel.AdViewModel
 import com.LetterQuest.ui.viewmodel.GameViewModel
@@ -242,13 +252,15 @@ fun GameplayScreen(
                                 gameStatus.mode.isTimed -> "⏱️ Timed Blitz"
                                 else -> "🎯 Level ${gameStatus.levelIndex}"
                             },
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
                         )
                         if (uiState.value.winStreak > 0) {
                             Text(
                                 "🔥 Win Streak: ${uiState.value.winStreak}",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.primary
+                                fontSize = 12.sp,
+                                color = Color(0xFFE67E22),
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
@@ -259,12 +271,24 @@ fun GameplayScreen(
                     }
                 },
                 actions = {
-                    Text(
-                        "🪙 $tokenBalance",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFF1C40F).copy(alpha = 0.15f),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("🪙", fontSize = 14.sp, modifier = Modifier.padding(end = 4.dp))
+                            Text(
+                                "$tokenBalance",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFF39C12)
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = {
                             if (gameStatus.isPaused) gameViewModel.resumeGame()
@@ -396,14 +420,21 @@ fun GameplayScreen(
                     }
                 }
 
-                // Hangman drawing
-                HangmanDrawing(
+                // Soul candle visual (replaces hangman drawing)
+                SoulCandleVisual(
                     wrongGuesses = gameStatus.incorrectGuesses.size,
                     maxAttempts = gameStatus.word.difficulty.maxAttempts,
+                    gameState = gameStatus.state,
                     modifier = Modifier
-                        .height(160.dp)
+                        .height(220.dp)
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 8.dp),
+                    onWrongGuessShake = {
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.REJECT)
+                    },
+                    onCorrectGuessPulse = {
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -411,22 +442,24 @@ fun GameplayScreen(
                 // Wrong guesses display
                 if (gameStatus.incorrectGuesses.isNotEmpty()) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFE74C3C).copy(alpha = 0.1f),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(8.dp),
-                            horizontalArrangement = Arrangement.Center
+                            modifier = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("❌ ", fontSize = 12.sp)
+                            Text("💔 ", fontSize = 14.sp)
                             Text(
                                 gameStatus.incorrectGuesses.sorted().joinToString(" "),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFFE74C3C).copy(alpha = 0.8f),
+                                letterSpacing = 2.sp
                             )
                         }
                     }
@@ -436,18 +469,19 @@ fun GameplayScreen(
                 key(gameStatus.revealedWord) {
                     AnimatedVisibility(
                         visible = true,
-                        enter = scaleIn(animationSpec = tween(200)) + fadeIn(animationSpec = tween(200)),
-                        exit = scaleOut(animationSpec = tween(100)) + fadeOut(animationSpec = tween(100))
+                        enter = fadeIn(animationSpec = tween(300)) + scaleIn(animationSpec = spring(dampingRatio = 0.6f)),
+                        exit = fadeOut(animationSpec = tween(150)) + scaleOut(animationSpec = tween(150))
                     ) {
                         Text(
                             text = gameStatus.revealedWord.replace("", " ").trim(),
-                            fontSize = 40.sp,
+                            fontSize = 42.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 6.sp,
+                            letterSpacing = 8.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp)
+                                .padding(vertical = 16.dp),
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 }
@@ -455,27 +489,34 @@ fun GameplayScreen(
                 // Guess feedback
                 AnimatedVisibility(
                     visible = guessResult != null && guessResult != GuessResult.Invalid,
-                    enter = scaleIn(animationSpec = tween(200)),
-                    exit = scaleOut(animationSpec = tween(200))
+                    enter = fadeIn(animationSpec = tween(150)) + scaleIn(animationSpec = spring(dampingRatio = 0.5f)),
+                    exit = fadeOut(animationSpec = tween(200)) + scaleOut(animationSpec = tween(200))
                 ) {
                     if (guessResult != null && guessResult != GuessResult.Invalid) {
-                        val (feedbackText, feedbackColor) = when (guessResult) {
-                            GuessResult.Correct -> "✓ Correct!" to Color(0xFF2ECC71)
-                            GuessResult.Incorrect -> "✗ Wrong!" to Color(0xFFE74C3C)
-                            GuessResult.AlreadyGuessed -> "Already guessed" to Color(0xFFF39C12)
-                            else -> "" to Color.Transparent
+                        val (feedbackText, feedbackColor, feedbackEmoji) = when (guessResult) {
+                            GuessResult.Correct -> Triple("✨ Brilliant!", Color(0xFF2ECC71), "✨")
+                            GuessResult.Incorrect -> Triple("💔 Lost light", Color(0xFFE74C3C), "💔")
+                            GuessResult.AlreadyGuessed -> Triple("Already guessed", Color(0xFFF39C12), "🔁")
+                            else -> Triple("", Color.Transparent, "")
                         }
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = feedbackColor.copy(alpha = 0.15f)
+                            color = feedbackColor.copy(alpha = 0.12f),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         ) {
-                            Text(
-                                feedbackText,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = feedbackColor,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text(feedbackEmoji, fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
+                                Text(
+                                    feedbackText,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = feedbackColor
+                                )
+                            }
                         }
                     }
                 }
@@ -485,19 +526,20 @@ fun GameplayScreen(
                 // Hint message
                 uiState.value.hintMessage?.let { message ->
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 8.dp),
+                        shadowElevation = 2.dp
                     ) {
                         Text(
                             message,
-                            fontSize = 13.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(10.dp)
+                            modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
@@ -506,26 +548,26 @@ fun GameplayScreen(
                 if (gameStatus.currentCombo >= 2) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFFF6B35).copy(alpha = 0.15f),
+                        color = Color(0xFFFF6B35).copy(alpha = 0.12f),
                         modifier = Modifier.padding(bottom = 6.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Text("🔥", fontSize = 16.sp)
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("🔥", fontSize = 18.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 "${gameStatus.currentCombo}x Combo!",
-                                fontSize = 14.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFFFF6B35)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 "+${gameStatus.currentCombo + 1}🪙 next guess",
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 color = Color(0xFFFF6B35).copy(alpha = 0.8f)
                             )
                         }
@@ -582,21 +624,22 @@ fun GameplayScreen(
             if (gameStatus.isPaused) {
                 val isMusicEnabled by soundViewModel.isMusicEnabled.collectAsState()
                 val isSoundEnabled by soundViewModel.isSoundEnabled.collectAsState()
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn(animationSpec = tween(200)),
-                    exit = fadeOut(animationSpec = tween(200))
+                    enter = fadeIn(animationSpec = tween(250)) + scaleIn(animationSpec = spring(dampingRatio = 0.5f)),
+                    exit = fadeOut(animationSpec = tween(200)) + scaleOut(animationSpec = tween(200))
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.7f)),
+                            .background(Color.Black.copy(alpha = 0.75f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
-                            modifier = Modifier.fillMaxWidth(0.8f),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surface
+                            modifier = Modifier.fillMaxWidth(0.85f),
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 16.dp
                         ) {
                             Column(
                                 modifier = Modifier.padding(32.dp),
@@ -615,7 +658,7 @@ fun GameplayScreen(
                                         onCheckedChange = { soundViewModel.setMusicEnabled(it) }
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -630,12 +673,14 @@ fun GameplayScreen(
                                 Spacer(modifier = Modifier.height(24.dp))
                                 Button(
                                     onClick = { gameViewModel.resumeGame() },
-                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                                    shape = RoundedCornerShape(16.dp)
                                 ) { Text("▶ Resume") }
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
                                 OutlinedButton(
                                     onClick = { navController.popBackStack() },
-                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                                    shape = RoundedCornerShape(16.dp)
                                 ) { Text("Quit Game") }
                             }
                         }
@@ -643,107 +688,119 @@ fun GameplayScreen(
                 }
             }
 
-            // Win celebration overlay
-            if (uiState.value.showingWinCelebration) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.75f)),
-                    contentAlignment = Alignment.Center
+    // Win celebration overlay
+    if (uiState.value.showingWinCelebration) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.75f)),
+            contentAlignment = Alignment.Center
+        ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(animationSpec = tween(300)) + scaleIn(animationSpec = spring(dampingRatio = 0.5f)),
+                modifier = Modifier.fillMaxWidth(0.88f)
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 16.dp
                 ) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(0.88f),
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier.padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("🎉", fontSize = 56.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Text("🎉", fontSize = 64.sp, modifier = Modifier.padding(bottom = 8.dp))
+                        Text(
+                            "Correct!",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2ECC71)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "The word was: ${gameStatus.word.normalizedValue}",
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        gameStatus.approvedStarRating?.let { stars ->
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                "Correct!",
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF2ECC71)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "The word was: ${gameStatus.word.normalizedValue}",
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            gameStatus.approvedStarRating?.let { stars ->
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = buildString {
-                                        repeat(stars) { append("★") }
-                                        repeat(3 - stars) { append("☆") }
-                                    },
-                                    fontSize = 30.sp,
-                                    color = Color(0xFFF1C40F),
-                                    letterSpacing = 4.sp
-                                )
-                                Text(
-                                    "Solved in ${gameStatus.elapsedSeconds}s",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "🔥 Streak: ${uiState.value.winStreak}",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFE67E22)
-                            )
-                            Text(
-                                "🪙 +${uiState.value.tokensEarnedThisGame} tokens",
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            if (uiState.value.usedHintThisGame) {
-                                Text(
-                                    "💡 Hint used",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Button(
-                                onClick = { gameViewModel.continueAfterWin() },
-                                enabled = !uiState.value.isProcessingAction,
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF2ECC71)
-                                )
-                            ) {
-                                Text(
-                                    "▶ Next Word",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-                            OutlinedButton(
-                                onClick = {
-                                    gameViewModel.resetGame()
-                                    navController.navigate(NavigationRoute.Home.route) {
-                                        popUpTo(NavigationRoute.Home.route) { inclusive = true }
-                                    }
+                                text = buildString {
+                                    repeat(stars) { append("⭐") }
+                                    repeat(3 - stars) { append("☆") }
                                 },
-                                enabled = !uiState.value.isProcessingAction,
-                                modifier = Modifier.fillMaxWidth().height(44.dp)
-                            ) { Text("🏠 Go Home") }
+                                fontSize = 32.sp,
+                                color = Color(0xFFF1C40F),
+                                letterSpacing = 4.sp
+                            )
+                            Text(
+                                "Solved in ${gameStatus.elapsedSeconds}s",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "🔥 Streak: ${uiState.value.winStreak}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFE67E22)
+                        )
+                        Text(
+                            "🪙 +${uiState.value.tokensEarnedThisGame} tokens",
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        if (uiState.value.usedHintThisGame) {
+                            Text(
+                                "💡 Hint used",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { gameViewModel.continueAfterWin() },
+                            enabled = !uiState.value.isProcessingAction,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2ECC71)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                "▶ Next Word",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                gameViewModel.resetGame()
+                                navController.navigate(NavigationRoute.Home.route) {
+                                    popUpTo(NavigationRoute.Home.route) { inclusive = true }
+                                }
+                            },
+                            enabled = !uiState.value.isProcessingAction,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) { Text("🏠 Go Home") }
                     }
                 }
             }
+        }
+    }
 
             // Daily challenge win overlay — player taps Go Home to leave, giving
             // recordCompletion() time to persist before the ViewModel is cleared.
@@ -754,59 +811,68 @@ fun GameplayScreen(
                         .background(Color.Black.copy(alpha = 0.75f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(0.88f),
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(animationSpec = tween(300)) + scaleIn(animationSpec = spring(dampingRatio = 0.5f)),
+                        modifier = Modifier.fillMaxWidth(0.88f)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 16.dp
                         ) {
-                            Text("🏆", fontSize = 56.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "Daily Challenge Complete!",
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF2ECC71),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "The word was: ${gameStatus.word.normalizedValue}",
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "🪙 +${uiState.value.tokensEarnedThisGame} tokens earned",
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Button(
-                                onClick = {
-                                    gameViewModel.dismissDailyWinCelebration()
-                                    gameViewModel.resetGame()
-                                    navController.navigate(NavigationRoute.Home.route) {
-                                        popUpTo(NavigationRoute.Home.route) { inclusive = true }
-                                    }
-                                },
-                                enabled = !uiState.value.isProcessingAction,
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF2ECC71)
-                                )
+                            Column(
+                                modifier = Modifier.padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                Text("🏆", fontSize = 64.sp, modifier = Modifier.padding(bottom = 8.dp))
                                 Text(
-                                    "🏠 Go Home",
-                                    fontSize = 16.sp,
+                                    "Daily Challenge Complete!",
+                                    fontSize = 28.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = Color(0xFF2ECC71),
+                                    textAlign = TextAlign.Center
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "The word was: ${gameStatus.word.normalizedValue}",
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "🪙 +${uiState.value.tokensEarnedThisGame} tokens earned",
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(
+                                    onClick = {
+                                        gameViewModel.dismissDailyWinCelebration()
+                                        gameViewModel.resetGame()
+                                        navController.navigate(NavigationRoute.Home.route) {
+                                            popUpTo(NavigationRoute.Home.route) { inclusive = true }
+                                        }
+                                    },
+                                    enabled = !uiState.value.isProcessingAction,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2ECC71)
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text(
+                                        "🏠 Go Home",
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                     }
@@ -961,13 +1027,39 @@ private fun DailyChallengeResultScreen(
 
 @Composable
 private fun ScoreChip(label: String, value: String) {
-    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+    var previousValue by remember { mutableIntStateOf(value.toIntOrNull() ?: 0) }
+    var displayValue by remember { mutableIntStateOf(previousValue) }
+
+    LaunchedEffect(value) {
+        val target = value.toIntOrNull() ?: 0
+        if (target != previousValue) {
+            val steps = (target - previousValue).coerceIn(-10, 10)
+            repeat(abs(steps)) {
+                displayValue += steps.sign
+                delay(30)
+            }
+            displayValue = target
+            previousValue = target
+        }
+    }
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+        modifier = Modifier.padding(4.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            Text(
+                "$displayValue",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
@@ -979,13 +1071,17 @@ private fun DifficultyChip(difficulty: String) {
         "MEDIUM" -> Color(0xFFF39C12)
         else -> Color(0xFFE74C3C)
     }
-    Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.15f)) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.15f),
+        modifier = Modifier.padding(4.dp)
+    ) {
         Text(
             difficulty,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = color,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
 }
@@ -998,154 +1094,28 @@ private fun AttemptsChip(remaining: Int, max: Int) {
         fraction > 0.3f -> Color(0xFFF39C12)
         else -> Color(0xFFE74C3C)
     }
-    Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.15f)) {
+    val animatedFraction by animateFloatAsState(
+        targetValue = fraction,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "attempts_fraction"
+    )
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.15f),
+        modifier = Modifier.padding(4.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Lives", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("$remaining", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color)
-        }
-    }
-}
-
-/**
- * Draws the hangman figure progressively as [wrongGuesses] increases.
- * Parts drawn in order: gallows w/ braces (always), head (with a face), body,
- * left arm, right arm, left leg, right leg. Each newly added part grows in with
- * a short spring-in animation driven by [animateFloatAsState] on the part counter.
- */
-@Composable
-private fun HangmanDrawing(
-    wrongGuesses: Int,
-    maxAttempts: Int,
-    modifier: Modifier = Modifier
-) {
-    val lineColor = MaterialTheme.colorScheme.onBackground
-    val wrongColor = Color(0xFFE74C3C)
-
-    // Animated completion fraction for each body part (0.0 – 1.0). Parts appear in
-    // order, so part N animates as the counter crosses N.
-    val partProgresses = (1..6).map { part ->
-        animateFloatAsState(
-            targetValue = if (wrongGuesses >= part) 1f else 0f,
-            animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
-            label = "hangman_part_$part"
-        ).value
-    }
-    val headP = partProgresses[0]
-    val bodyP = partProgresses[1]
-    val leftArmP = partProgresses[2]
-    val rightArmP = partProgresses[3]
-    val leftLegP = partProgresses[4]
-    val rightLegP = partProgresses[5]
-
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val strokeW = 6f
-
-        // ── Gallows — always visible, with diagonal braces + a drawArc ground swoosh
-        drawArc(
-            color = lineColor.copy(alpha = 0.25f),
-            startAngle = 180f,
-            sweepAngle = 180f,
-            useCenter = false,
-            topLeft = Offset(w * 0.12f, h * 0.86f),
-            size = androidx.compose.ui.geometry.Size(w * 0.76f, h * 0.12f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(strokeW * 0.6f, cap = StrokeCap.Round)
-        )
-        drawLine(lineColor, Offset(w * 0.15f, h * 0.95f), Offset(w * 0.85f, h * 0.95f), strokeW, StrokeCap.Round) // base
-        drawLine(lineColor, Offset(w * 0.3f, h * 0.95f), Offset(w * 0.3f, h * 0.05f), strokeW, StrokeCap.Round)  // pole
-        drawLine(lineColor, Offset(w * 0.3f, h * 0.05f), Offset(w * 0.6f, h * 0.05f), strokeW, StrokeCap.Round)  // top bar
-        drawLine(lineColor, Offset(w * 0.3f, h * 0.2f), Offset(w * 0.45f, h * 0.05f), strokeW * 0.7f, StrokeCap.Round) // brace
-        drawLine(lineColor, Offset(w * 0.6f, h * 0.05f), Offset(w * 0.6f, h * 0.18f), strokeW, StrokeCap.Round)  // rope
-
-        val headCenter = Offset(w * 0.6f, h * 0.29f)
-        val headRadius = h * 0.1f
-
-        // ── Head (with a worried face once fully drawn)
-        if (headP > 0f) {
-            drawCircle(
-                wrongColor,
-                radius = headRadius * headP,
-                center = headCenter,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(strokeW)
-            )
-            if (headP > 0.85f) {
-                // Eyes (little crosses-of-despair) + mouth arc once the head settles
-                val eyeY = headCenter.y - headRadius * 0.2f
-                val eyeDX = headRadius * 0.38f
-                drawCircle(wrongColor, radius = strokeW * 0.5f, center = Offset(headCenter.x - eyeDX, eyeY))
-                drawCircle(wrongColor, radius = strokeW * 0.5f, center = Offset(headCenter.x + eyeDX, eyeY))
-                drawArc(
-                    color = wrongColor,
-                    startAngle = 200f,
-                    sweepAngle = 140f,
-                    useCenter = false,
-                    topLeft = Offset(headCenter.x - headRadius * 0.4f, headCenter.y + headRadius * 0.15f),
-                    size = androidx.compose.ui.geometry.Size(headRadius * 0.8f, headRadius * 0.5f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(strokeW * 0.6f, cap = StrokeCap.Round)
-                )
-            }
-        }
-
-        val neckY = h * 0.39f
-        val hipY = h * 0.67f
-        val shoulderY = h * 0.46f
-        val feetY = h * 0.85f
-
-        // ── Body grows downward from the neck
-        if (bodyP > 0f) {
-            drawLine(
-                wrongColor,
-                Offset(w * 0.6f, neckY),
-                Offset(w * 0.6f, neckY + (hipY - neckY) * bodyP),
-                strokeW, StrokeCap.Round
-            )
-        }
-
-        // ── Arms swing outward from the shoulders
-        if (leftArmP > 0f) {
-            val shoulder = Offset(w * 0.6f, shoulderY)
-            val hand = Offset(w * 0.45f, h * 0.57f)
-            drawLine(
-                wrongColor,
-                shoulder,
-                shoulder + (hand - shoulder) * leftArmP,
-                strokeW, StrokeCap.Round
-            )
-        }
-        if (rightArmP > 0f) {
-            val shoulder = Offset(w * 0.6f, shoulderY)
-            val hand = Offset(w * 0.75f, h * 0.57f)
-            drawLine(
-                wrongColor,
-                shoulder,
-                shoulder + (hand - shoulder) * rightArmP,
-                strokeW, StrokeCap.Round
-            )
-        }
-
-        // ── Legs kick down from the hips
-        if (leftLegP > 0f) {
-            val hip = Offset(w * 0.6f, hipY)
-            val foot = Offset(w * 0.45f, feetY)
-            drawLine(
-                wrongColor,
-                hip,
-                hip + (foot - hip) * leftLegP,
-                strokeW, StrokeCap.Round
-            )
-        }
-        if (rightLegP > 0f) {
-            val hip = Offset(w * 0.6f, hipY)
-            val foot = Offset(w * 0.75f, feetY)
-            drawLine(
-                wrongColor,
-                hip,
-                hip + (foot - hip) * rightLegP,
-                strokeW, StrokeCap.Round
+            Text("Lives", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            Text(
+                "$remaining",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = color,
+                modifier = Modifier.padding(top = 2.dp)
             )
         }
     }
@@ -1159,20 +1129,25 @@ private fun TimerChip(secondsLeft: Long, wordsSolved: Int) {
         secondsLeft > 10L -> Color(0xFFF39C12)
         else -> Color(0xFFE74C3C)
     }
-    val color = remember(targetColor) { androidx.compose.animation.Animatable(targetColor) }
+    val color = remember { androidx.compose.animation.Animatable(targetColor) }
     LaunchedEffect(targetColor) {
         color.animateTo(targetColor, animationSpec = tween(600))
     }
-    Surface(shape = RoundedCornerShape(8.dp), color = color.value.copy(alpha = 0.15f)) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = color.value.copy(alpha = 0.15f),
+        modifier = Modifier.padding(4.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("⏱ ${secondsLeft}s", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color.value)
             Text(
                 "$wordsSolved word${if (wordsSolved == 1) "" else "s"}",
                 fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
             )
         }
     }
@@ -1200,9 +1175,8 @@ private fun TimedSessionSummary(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("⏱️", fontSize = 64.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            Text("Time's Up!", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+            Text("⏱️", fontSize = 72.sp, modifier = Modifier.padding(bottom = 16.dp))
+            Text("Time's Up!", fontSize = 36.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 "You solved $wordsSolved word${if (wordsSolved == 1) "" else "s"} in ${GameMode.TIMED_SESSION_SECONDS}s!",
@@ -1211,48 +1185,52 @@ private fun TimedSessionSummary(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF1C40F).copy(alpha = 0.15f),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFFF1C40F).copy(alpha = 0.12f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         "Session Reward",
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
                     )
                     Text(
                         "🪙 +$payout token${if (payout == 1) "" else "s"}",
-                        fontSize = 26.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFF39C12)
+                        color = Color(0xFFF39C12),
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                     if (uiState.tokensEarnedThisGame > payout) {
                         Text(
                             "(incl. 🪙 +${uiState.tokensEarnedThisGame - payout} from guesses)",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = { gameViewModel.restartTimedSession() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2ECC71))
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2ECC71)),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text("↻ Play Again", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("↻ Play Again", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -1266,7 +1244,8 @@ private fun TimedSessionSummary(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text("🏠 Back to Home")
             }
@@ -1335,56 +1314,76 @@ private fun AlphabetGrid(
     val alphabet = ('A'..'Z').toList()
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        alphabet.chunked(6).forEach { rowLetters ->
+        alphabet.chunked(7).forEach { rowLetters ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                rowLetters.forEach { letter ->
+                rowLetters.forEachIndexed { index, letter ->
                     val isCorrect = letter in guessedLetters
                     val isWrong = letter in incorrectLetters
                     val isUsed = isCorrect || isWrong
-                    AnimatedVisibility(
-                        visible = !isUsed,
-                        enter = scaleIn(animationSpec = tween(200)) + fadeIn(animationSpec = tween(200)),
-                        exit = scaleOut(animationSpec = tween(150)) + fadeOut(animationSpec = tween(150)),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(44.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { onLetterClick(letter) },
-                            enabled = !isUsed,
-                            contentPadding = PaddingValues(0.dp),
-                            modifier = Modifier.fillMaxSize()
+
+                    if (!isUsed) {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(animationSpec = tween(250, delayMillis = index * 20)) + scaleIn(
+                                animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
                         ) {
-                            Text(letter.toString(), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            OutlinedButton(
+                                onClick = { onLetterClick(letter) },
+                                enabled = true,
+                                contentPadding = PaddingValues(0.dp),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.primaryContainer,
+                                                MaterialTheme.colorScheme.surface
+                                            )
+                                        ),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            ) {
+                                Text(
+                                    letter.toString(),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
-                    }
-                    // Show placeholder tile for used letters
-                    if (isUsed) {
+                    } else {
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(44.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isCorrect) Color(0xFF27AE60).copy(alpha = 0.2f)
-                            else Color(0xFFE74C3C).copy(alpha = 0.2f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isCorrect) Color(0xFF27AE60).copy(alpha = 0.15f)
+                            else Color(0xFFE74C3C).copy(alpha = 0.15f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     letter.toString(),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = if (isCorrect) Color(0xFF27AE60) else Color(0xFFE74C3C)
                                 )
                             }
                         }
                     }
                 }
-                repeat(6 - rowLetters.size) {
+                repeat(7 - rowLetters.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }

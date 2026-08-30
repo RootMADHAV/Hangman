@@ -29,7 +29,7 @@ object ScoreCalculator {
         return Math.round(subtotal * multiplierFor(gameStatus.word.difficulty) * scoreMultiplier)
     }
 
-    private fun multiplierFor(difficulty: Difficulty): Float = when (difficulty) {
+    fun multiplierFor(difficulty: Difficulty): Float = when (difficulty) {
         Difficulty.EASY -> 1.0f
         Difficulty.MEDIUM -> 1.5f
         Difficulty.HARD -> 2.0f

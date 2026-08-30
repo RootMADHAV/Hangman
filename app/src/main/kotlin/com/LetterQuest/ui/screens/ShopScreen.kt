@@ -219,11 +219,8 @@ fun ShopScreen(
                 RemoveAdsPurchaseCard(
                     alreadyOwned = adsRemoved,
                     onBuyClick = {
-                        viewModel.purchaseRemoveAds()
-                        rewardedAdViewModel.setAdsRemoved(true)
-                        android.widget.Toast.makeText(
-                            context, "🎉 Ads removed!", android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                        val activity = context.findActivity()
+                        viewModel.purchaseRemoveAds(activity)
                     }
                 )
             }

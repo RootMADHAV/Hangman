@@ -7,10 +7,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Plays the optional looping `bgm.mp3` from the assets folder. No-ops silently when
- * the resource is absent or playback fails — background music must never crash gameplay.
- */
 @Singleton
 class MusicPlayerImpl @Inject constructor(
     @ApplicationContext private val context: Context
@@ -18,22 +14,22 @@ class MusicPlayerImpl @Inject constructor(
 
     private var player: MediaPlayer? = null
     private var wasPlayingBeforePause: Boolean = false
+    private var lastTrack: String? = null
 
-    override fun start() {
-        if (player?.isPlaying == true) return
-        try {
-            player?.release()
-            val afd = context.assets.openFd("bgm.mp3")
-            player = MediaPlayer().apply {
-                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                afd.close()
-                isLooping = true
-                setVolume(DEFAULT_VOLUME, DEFAULT_VOLUME)
-                prepare()
-                start()
-            }
-        } catch (_: Exception) {
-            player = null
+    override fun startHome() {
+        lastTrack = "home"
+        playTrack("bgm_home.mp3")
+    }
+
+    override fun startGameplay() {
+        lastTrack = "gameplay"
+        playTrack("bgm_gameplay.mp3")
+    }
+
+    override fun resumeLast() {
+        when (lastTrack) {
+            "gameplay" -> startGameplay()
+            else -> startHome()
         }
     }
 
@@ -45,6 +41,7 @@ class MusicPlayerImpl @Inject constructor(
         }
         player?.release()
         player = null
+        wasPlayingBeforePause = false
     }
 
     override fun pause() {
@@ -62,12 +59,42 @@ class MusicPlayerImpl @Inject constructor(
             try {
                 player?.start()
             } catch (_: Exception) {
-                start()
+                // If resume fails, attempt to restart the current track
+                startHome()
             }
         }
     }
 
     override fun release() = stop()
+
+    private fun playTrack(assetPath: String) {
+        if (player?.isPlaying == true) {
+            val currentDataSource = getCurrentDataSource()
+            if (currentDataSource == assetPath) return
+            stop()
+        }
+        try {
+            val afd = context.assets.openFd(assetPath)
+            player = MediaPlayer().apply {
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
+                isLooping = true
+                setVolume(DEFAULT_VOLUME, DEFAULT_VOLUME)
+                prepare()
+                start()
+            }
+        } catch (_: Exception) {
+            player = null
+        }
+    }
+
+    private fun getCurrentDataSource(): String? {
+        return try {
+            player?.let { "unknown" }
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     private companion object {
         const val DEFAULT_VOLUME = 0.4f

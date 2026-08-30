@@ -28,6 +28,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,10 @@ fun HomeScreen(
     val dailyStreak = dailyChallengeViewModel.streak.collectAsState().value
     val dailyLogin = shopViewModel.dailyLoginState.collectAsState().value
     val playerLevel = homeViewModel.playerLevel.collectAsState().value
+
+    LaunchedEffect(Unit) {
+        soundViewModel.refreshMusic()
+    }
 
     Scaffold { padding ->
         Box(modifier = Modifier.fillMaxSize()) {

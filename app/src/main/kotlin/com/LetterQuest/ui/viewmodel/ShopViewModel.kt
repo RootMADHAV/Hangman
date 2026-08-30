@@ -3,8 +3,11 @@ package com.LetterQuest.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.LetterQuest.domain.model.DailyLoginReward
+import com.LetterQuest.domain.model.InAppPurchase
+import com.LetterQuest.domain.model.InAppPurchases
 import com.LetterQuest.domain.model.ShopItem
 import com.LetterQuest.domain.model.UserTokens
+import com.LetterQuest.domain.repository.BillingRepository
 import com.LetterQuest.domain.repository.DailyLoginRepository
 import com.LetterQuest.domain.repository.PreferencesRepository
 import com.LetterQuest.domain.repository.ShopRepository
@@ -16,6 +19,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,7 +51,8 @@ class ShopViewModel @Inject constructor(
     private val tokenRepository: TokenRepository,
     private val dailyLoginRepository: DailyLoginRepository,
     private val preferencesRepository: PreferencesRepository,
-    private val adManager: AdManager
+    private val adManager: AdManager,
+    private val billingRepository: BillingRepository
 ) : ViewModel() {
 
     private val _purchaseMessage = MutableStateFlow<String?>(null)
@@ -141,12 +146,21 @@ class ShopViewModel @Inject constructor(
     }
 
     /** Purchase Remove Ads in-app product */
-    fun purchaseRemoveAds() {
+    fun purchaseRemoveAds(activity: android.app.Activity? = null) {
         viewModelScope.launch {
-            adManager.setAdsRemoved(true)
-            preferencesRepository.setAdsRemoved(true)
-            shopRepository.recordIAP()
-            _purchaseMessage.value = "🎉 Remove Ads purchased! Ads are now disabled."
+            if (billingRepository.isPurchased(InAppPurchases.REMOVE_ADS.id)) {
+                _purchaseMessage.value = "Ads are already removed!"
+                return@launch
+            }
+            billingRepository.setActivity(activity)
+            billingRepository.clearMessage()
+            billingRepository.launchPurchase(InAppPurchases.REMOVE_ADS)
+            val message = billingRepository.purchaseMessage.first { it != null }
+            _purchaseMessage.value = message
+            if (message!!.contains("successful", ignoreCase = true)) {
+                adManager.setAdsRemoved(true)
+                preferencesRepository.setAdsRemoved(true)
+            }
         }
     }
 
